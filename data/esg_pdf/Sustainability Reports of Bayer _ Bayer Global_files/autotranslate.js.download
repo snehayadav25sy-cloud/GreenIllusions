@@ -1,0 +1,404 @@
+/**
+ * @file autotranslate.js
+ *
+ * Defines the behavior of the bayer autotranslate.
+ */
+
+(function ($, Drupal, drupalSettings) {
+  'use strict';
+
+  var htmlContent = "",
+    languageList, langcode, selectLanguageLabel, selectLanguagedescription, autoTranslateEnable;
+  var sourcelang = "",
+    selectdropdownLabel, selectdropdownplaceholder, countryCode, cookieName, componentList, autotranslateTextMessage, autoTranslateCookieText, autoTranslateCookieButtonLabel;
+  const deviceSize = '991';
+  var textNodes = [];
+  var skipNodes = [];
+  var texInner = [];
+  var restrictedCountryList = [];
+  var cacheFlag = true;
+  var skipComponents = [];
+  Drupal.behaviors.bayerAutotranslate = {
+    attach: function (context) {
+      languageList = drupalSettings.bayer_autotranslate.language_list;
+      var labels = drupalSettings.bayer_autotranslate.labels;
+      restrictedCountryList = drupalSettings.bayer_autotranslate.country_code;
+      selectLanguageLabel = labels['label_select_language'];
+      selectLanguagedescription = labels['select_description'];
+      selectdropdownLabel = labels['label_select_dropdown'];
+      selectdropdownplaceholder = labels['placeholder_select_dropdown'];
+      autotranslateTextMessage = labels['autotranslate_text_message'];
+      componentList = drupalSettings.bayer_autotranslate.cache_exclude_component_list;
+      skipComponents = drupalSettings.bayer_autotranslate.skip_components;
+      autoTranslateCookieText = drupalSettings.bayer_autotranslate.autotranslate_cookie_settings_text;
+      autoTranslateCookieButtonLabel = drupalSettings.bayer_autotranslate.autotranslate_cookie_button_label;
+      autoTranslateEnable = drupalSettings.bayer_autotranslate.enable_autotranslation;
+    }
+  }
+
+  Drupal.behaviors.autoTranslateDropdown = {
+    bayerAutotranslateDropdown: function () {
+      cookieDetails = drupalSettings.bayer_geolocation.cookie_details;
+      cookieName = cookieDetails['cookie_name'];
+      setTimeout(function () {
+        window.dataLayer = window.dataLayer || [];
+        isCacheExclude(componentList);
+        var isRestricted = true;
+        if (autoTranslateEnable) {
+          $('.language-switcher-language-url .selected-link-language').removeClass('single-link');
+          if (($('body').hasClass('idnet')) || ('undefined' !== typeof OnetrustActiveGroups)) {
+            if (($('body').hasClass('idnet')) || OnetrustActiveGroups.indexOf('C0002') !== -1) {
+              // User has accepted cookies. Check country code from GeoCountry cookie. If GeoCountry
+              // cookie is not set, then set the cookie.
+              countryCode = getCookie(cookieName);
+              if (countryCode === undefined || countryCode === null || countryCode == '') {
+                getGeolocationDetails(false);
+                countryCode = getCookie(cookieName);
+              }
+              // Create auto translation language switcher only if GeoCountry cookie is set and user's country is not restricted.
+              if (countryCode) {
+                isRestricted = isRestrictedCountry(restrictedCountryList, countryCode);
+              }
+              if (($('body').hasClass('idnet')) || isRestricted === false) {
+                // Show autotranslate dropdown even if only one language is available.
+                if ($('.language-switcher-language-url .selected-link-language').hasClass('single-link')) {
+                  $('.language-switcher-language-url .selected-link-language').removeClass('single-link')
+                }
+                if ($('.select2-language-select').length < 1) {
+                  $('.language-switcher-language-url ul.links .select-label').remove();
+                  sourcelang = $('.selected-link-language a').attr('hreflang');
+                  var languageSwitcherClass = $('.language-switcher-language-url ul.links');
+                  languageSwitcherClass.append('<li class="select-label">' + selectLanguagedescription + '</li>');
+                  languageSwitcherClass.addClass('language-wrapper');
+                  var div = document.createElement("select");
+                  div.className = "select2-language-select";
+                  div.setAttribute("id", "languageSelect");
+                  languageSwitcherClass.append('<li><span class="select-language">' + selectdropdownLabel + '<BR></span></li>');
+                  languageSwitcherClass.append("<li class='select-language-dropdown'></li>");
+                  $('.select-language-dropdown').append(div);
+                  $('.language-wrapper .select-label a').attr('target', '_blank');
+                  var languageArray = [];
+                  var count = 0;
+                  for (var obj in languageList) {
+                    languageArray[obj] = languageList[obj];
+                  }
+                  var data = [{
+                    id: '',
+                    text: ''
+                  }];
+                  var i = 0;
+                  for (var key in languageArray) {
+                    if (languageArray.hasOwnProperty(key)) {
+                      data.push({
+                        id: key,
+                        text: languageArray[key]
+                      });
+                      i++;
+                    }
+                  }
+                  var languageplaceholder = Drupal.t(selectdropdownplaceholder);
+                  var langPlaceholderDevice = Drupal.t(selectdropdownLabel);
+                  $("#languageSelect").select2({
+                    data: data,
+                    closeOnSelect: true,
+                    placeholder: languageplaceholder,
+                  });
+                  $('#languageSelect').on("select2:open", function (e) {
+                    $('.select2-dropdown').addClass('autotranslation-select2-dropdown');
+                    $('.select2-dropdown').parent().addClass('autotranslate-dropdown');
+                  });
+                  $('#languageSelect').on("select2:select", function (e) {
+                    // Close dropdown on language select.
+                    $(".language-switcher-language-url .selected-link-language > a").click();
+
+                    count++;
+                    var data = e.params.data;
+                    langcode = data.id ? data.id : '';
+                    if (langcode) {
+                      languageSelect(count);
+                      autotranslateLanguageDisplay(langcode);
+                    }
+                  });
+                  $('.language-wrapper .select2-container').on('click', function () {
+                    window.dispatchEvent(new Event('resize'));
+                  });
+
+                  $(".language-wrapper .select2-container").keyup(function (event) {
+                    if (event.keyCode === 13) {
+                      $(".language-wrapper .select2-container").click();
+                      $(".autotranslate-dropdown .select2-search--dropdown .select2-search__field").focus();
+                    }
+                  });
+
+                  // split query string.
+                  var sPageURL = window.location.search.substring(1);
+                  var sURLVariables = sPageURL.split('&');
+                  for (var i = 0; i < sURLVariables.length; i++) {
+                    var urlparam = sURLVariables[i].split('=');
+                    // Load translated content if 'autotranslate' parameter available in url.
+                    if (urlparam[0] == 'autotranslate') {
+                      langcode = urlparam[1];
+                      languageSelect(0);
+                      autotranslateLanguageDisplay(langcode);
+                      $(".language-switcher-language-url ul li a").each(function (i) {
+                        var autotranslatehref = $(this).attr("href");
+                        $(this).attr("href", autotranslatehref.split("?autotranslate")[0]);
+                        $(this).removeAttr("data-drupal-link-query");
+                      });
+                    }
+                  }
+                }
+              }
+            }
+            else {
+              createAutotranslateCookie();
+            }
+          }
+          else {
+            createAutotranslateCookie();
+          }
+        }
+      }, 300);
+    }
+  }
+
+  function languageSelect(count) {
+    if ($('.translation-text-wrapper').length == 0) { // Add this only on the first language select
+      $('main.layout').prepend('<div class="translation-text-wrapper"><div class="autotranslate-text translation-text-en">' + autotranslateTextMessage.replace('current_url', window.location.pathname) + '</div></div>');
+      $('<div class="autotranslate-text translation-text hide">' + autotranslateTextMessage.replace('current_url', window.location.pathname) + '</div>').insertAfter($('.translation-text-wrapper .autotranslate-text'));
+    }
+    var htmlTextContent = (htmlContent.length == 0) ? GetTextContentFromHtml(false) : htmlContent;
+    $('body').append('<div class="ajax-progress ajax-progress-fullscreen"></div>');
+    getTranslationsAsync(htmlTextContent);
+  }
+
+  /**
+   * Ajax call to translation API
+   */
+  function getTranslationsAsync(htmlContentArray) {
+    let nid = drupalSettings.bayer_autotranslate.nid;
+    return $.ajax({
+      url: Drupal.url('get-translation'),
+      type: "POST",
+      data: {
+        htmlcontent: htmlContentArray,
+        sourcelang: sourcelang,
+        targetlang: langcode,
+        nid: nid,
+        cacheflag: cacheFlag
+      },
+      dataType: "json"
+    }).then(function (response) {
+      if (Object.keys(response).length) {
+        GetTextContentFromHtml(true, response.data);
+        $('.ajax-progress').remove();
+        if (Object.keys(window.dataLayer).length) {
+          window.dataLayer.push({
+            'event': 'bayer_autotranslate',
+            'source': response.source,
+            'source_lang': sourcelang,
+            'target_lang': langcode
+          });
+
+          // Push query string to current url without page refresh.
+          var currentUrl = window.location.href;
+          var url = new URL(currentUrl);
+          url.searchParams.set("autotranslate", langcode); // setting your parameter.
+          var newUrl = url.href;
+          window.history.pushState({ href: newUrl }, '', newUrl);
+        }
+      }
+    }).fail(function () {
+      $('.ajax-progress').remove();
+    });
+  }
+
+  /**
+   * Get and set Text content before and after translation.
+   */
+  function GetTextContentFromHtml(postTranslation, apiResponse = null) {
+    const root = document.querySelector('#content-wrapper');
+    const queue = [root];
+    const INCLUDE = ['P', 'BLOCKQUOTE', 'FIGCAPTION', 'H4']; // P tags content taken care seperately
+    const NODE_TEXT = 3;
+    const EXCLUDETAG = ["SCRIPT", "STYLE", "CODE", "NOSCRIPT"]; // add exclude tags
+    if (apiResponse != null) {
+      apiResponse = apiResponse.replace('<BR>-<BR>', '<BR>-<BR> ');
+      var translatedContentArray = apiResponse.split("<BR>-<BR>");
+    }
+    // check if node is not the exclude one
+    function isNodeAllow(node) {
+      return EXCLUDETAG.indexOf(node.tagName) === -1;
+    }
+
+    // define a helper function to check if has one child node
+    function hasOneChildNode(node) {
+      return node.childNodes && node.childNodes.length === 1;
+    }
+
+    // check if node is not the exclude one
+    function isChildNodeText(node) {
+      return node.childNodes[0].nodeType === NODE_TEXT;
+    }
+
+    // check if node content is not empty
+    function isNotEmpty(node) {
+      return Boolean(node.innerText == undefined ? false : node.innerText.trim());
+    }
+
+    while (queue.length) {
+      var isTrue = 0;
+      var node = queue.shift();
+      // Skip node if needed.
+      $.each(skipComponents, function (i, value) {
+        if ($(node).hasClass(value)) {
+          isTrue = 1;
+          return;
+        }
+      });
+      if (isTrue == 1) {
+        continue;
+      }
+      const children = node.children;
+
+      if (children && children.length > 0) {
+        const childrenAsArray = Array.prototype.slice.call(children);
+        Array.prototype.push.apply(queue, childrenAsArray);
+      }
+
+      if (postTranslation == true) {
+        $.each(textNodes, function (i, value) {
+          if (value === node) {
+            if (translatedContentArray[i] == 'undefined') {
+              return;
+            }
+            // Exception for P tag contents
+            if ((INCLUDE.indexOf(node.tagName) > -1) || (node.tagName == 'LI' && node.className == "")) {
+              node.innerHTML = translatedContentArray[i];
+            } else {
+              node.innerText = translatedContentArray[i];
+            }
+            $('.translation-text-wrapper .translation-text').removeClass('hide');
+          }
+        });
+      } else {
+        if ((INCLUDE.indexOf(node.tagName) > -1) && isNotEmpty(node)) {
+          // Exception for P, figcaption, quotes contents
+          textNodes.push(node);
+          texInner.push(node.innerHTML);
+        } else if (node.tagName == 'LI' && node.className == "" && isNotEmpty(node)) {
+          // Exception for page content has LI contents
+          textNodes.push(node);
+          texInner.push(node.innerHTML);
+        } else if (isNodeAllow(node) && hasOneChildNode(node) && isChildNodeText(node) && isNotEmpty(node)) {
+          // All other logic goes here
+          textNodes.push(node);
+          texInner.push(node.innerText);
+        } else {
+          //No changes required for exceptions
+        }
+      }
+    }
+    if (postTranslation == true) {
+      texInner = [];
+      return;
+    }
+    // All the collected text of the page
+    htmlContent = texInner.join(" <BR>-<BR> ");
+    htmlContent += " <BR>-<BR> ";
+    return htmlContent;
+  }
+
+  /**
+   * Get Cookie Method.
+   */
+  function getCookie(cname) {
+    var name = cname + "=";
+    var decodedCookie = decodeURIComponent(document.cookie);
+    var ca = decodedCookie.split(';');
+    for (var i = 0; i < ca.length; i++) {
+      var c = ca[i];
+      while (c.charAt(0) == ' ') {
+        c = c.substring(1);
+      }
+      if (c.indexOf(name) == 0) {
+        return c.substring(name.length, c.length);
+      }
+    }
+    return "";
+  }
+
+  /**
+   * Function to set flag to restrict translation for list of countries
+   */
+  function isRestrictedCountry(countryList, countryCode) {
+    // Disable auto translation dropdown if country is restricted.
+    var countryCode = countryCode.split(":");
+    for (var key in countryList) {
+      var value = countryList[key];
+      if (typeof value === 'object' && !Array.isArray(value) && value !== null) {
+        if (value.hasOwnProperty('region_iso_code')) {
+          if (key == countryCode[0] && value['region_iso_code'].indexOf(countryCode[1]) > -1) { // Restricted code is same as region iso code
+            return true;
+          }
+        }
+      } else {
+        if (key == countryCode[0] && (typeof value === 'string')) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  /**
+   * Function to set cacheFlag to restrict caching for list of components
+   */
+  function isCacheExclude(componentList) {
+    var componentClass = 'paragraph--type--';
+    componentList.forEach(element => {
+      element = element.replace(/_/g, "-");
+      var component = componentClass + element;
+      if ($(".field__item").find("." + component).length > 0) {
+        cacheFlag = false;
+      }
+    });
+  }
+
+  /**
+   * Function to create a cookie settings button.
+   */
+  function createAutotranslateCookie(componentList) {
+    var languageSwitcherClass = $('.language-switcher-language-url ul.links');
+    languageSwitcherClass.addClass('language-wrapper');
+    languageSwitcherClass.append('<li class="select-label autotranslate-cookie-button"><p>' + autoTranslateCookieText + '</p></li>');
+    $('ul.language-wrapper .select-label').append('<button class="optanon-show-settings cta">' + autoTranslateCookieButtonLabel + '</button>');
+  }
+
+  /**
+   * Function to display autotranslate language name
+   */
+  function autotranslateLanguageDisplay(languagecode) {
+    $(".utility-nav-wrapper div > a.language-link.is-active").text($('#languageSelect option[value=' + languagecode + ']').text());
+    $('.utility-nav-wrapper .language-switcher-language-url .links .is-active').addClass('d-block');
+    $('#languageSelect').val(languagecode).trigger('change');
+  }
+
+
+  $(document).ready(function () {
+    Drupal.behaviors.autoTranslateDropdown.bayerAutotranslateDropdown();
+    setTimeout(focusOut, 400);
+  });
+
+  // Close language switcher when there is no focus.
+
+  function focusOut() {
+    $(".select2-container").focusout(function () {
+      if (!$('.select2-container').hasClass("select2-container--open")) {
+        $(".selected-link-language").addClass("off");
+        $(".language-switcher-language-url .links").hide();
+      }
+    });
+  }
+
+})(jQuery, Drupal, drupalSettings);

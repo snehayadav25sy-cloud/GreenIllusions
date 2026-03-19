@@ -1,0 +1,166 @@
+(function () {
+  const path = window.location.pathname;
+
+  const isExcluded = ['/products', '/products/product-catalog', '/products/product-map'].includes(path);
+  if (!isExcluded && path.startsWith('/products')) {
+    const markup = `
+      <section id="products-page-cta" class="fis-white-bg circle-image-left overview-component">
+        <div class="content-width">
+          <div class="l2featuresolutionrow">
+            <div class="l2featureimgleft col col-50">
+              <img src="-/media/73ABF9FBD253487A87B278D143B9A791" alt="Computer screen displaying the FIS product catalog page on fisglobal.com" />
+            </div>
+            <div class="l2featurecopyright col col-50">
+              <h2>Explore all the <span class="fis-text-teal">financial technology products</span> FIS has to&nbsp;offer</h2>
+              <a href="/products/product-catalog" class="btn-primary-green-on-white">View all products</a>
+            </div>
+          </div>
+        </div>
+      </section>
+      <style>
+        section#products-page-cta{max-width:1440px;margin-left:auto;margin-right:auto}
+        section#products-page-cta .l2featuresolutionrow{display:flex;align-items:center;padding-top:90rem;padding-bottom:90rem}
+        #products-page-cta .l2featureimgleft.col.col-50{position:relative;padding-right:90rem}
+        #products-page-cta .l2featureimgleft.col.col-50 img{max-width:100%}
+        section#products-page-cta .l2featurecopyright h2{font-weight:400;font-family:'Roobert Light',sans-serif;line-height:1.2;margin-bottom:25px;font-size:37rem}
+        section#products-page-cta .l2featurecopyright h2 span.fis-text-teal{font-family:'Roobert Bold',sans-serif;color:#05a399}
+        section#products-page-cta .l2featurecopyright a.btn-primary-green-on-white{font-weight:400;font-family:'Roobert Semibold',sans-serif}
+        section#products-page-cta .col-50{width:50%}
+        @media(min-width:1400px){
+          #products-page-cta .l2featureimgleft.col.col-50 img{max-width:436px}
+        }
+        @media(max-width:768px){
+          section#products-page-cta .col-50{width:100%}
+          #products-page-cta .l2featureimgleft.col.col-50{padding-right:0;margin-bottom:40rem}
+          section#products-page-cta .l2featuresolutionrow{flex-direction:column}
+          section#products-page-cta .l2featurecopyright h2{text-align:center}
+          section#products-page-cta .l2featurecopyright a.btn-primary-green-on-white{display:block;max-width:max-content;margin-left:auto;margin-right:auto}
+          #products-page-cta .l2featureimgleft.col.col-50 img{max-width:320px;margin-left:auto;margin-right:auto;display:block}
+        }
+      </style>`;
+
+
+        const aosMaxAttempts = 20; // Total duration = maxAttempts * intervalDelay
+        const intervalDelay = 300; // milliseconds
+        let aosAttempts = 0;
+      
+        const aosInterval = setInterval(() => {
+          aosAttempts++;
+      
+          const isAOSAvailable = typeof AOS !== 'undefined' && typeof AOS.refresh === 'function';
+          const slickPresent = document.querySelector('.slick-slide.slick-current') !== null;
+          
+      
+          if (isAOSAvailable && slickPresent) {
+            //console.log('Conditions met. Refreshing AOS...');
+            setTimeout(function(){
+              AOS.refresh();
+            },2000);
+            
+            clearInterval(aosInterval);
+          }
+      
+          if (attempts >= aosMaxAttempts) {
+            console.warn('AOS refresh check timed out.');
+            clearInterval(aosInterval);
+          }
+        }, intervalDelay);
+    
+      
+    
+    
+      const maxAttempts = 25;
+    let attempts = 0;
+
+
+
+      const interval = setInterval(() => {
+      const primaryTarget = document.querySelector('.component.cta-listing');
+      const fallbackSection = document.querySelector('section.bottom-cta-boxes.overview-component');
+      const fallbackTarget = fallbackSection ? fallbackSection.closest('.component.htmp-spot-advance') : null;
+      const iconCardListing = document.querySelector('.IconCardListing');
+      
+      if (iconCardListing){
+        console.log('Icon card listing found');
+        document.querySelectorAll('.IconCardListing').forEach(card => {
+          card.querySelectorAll('.module-title-link').forEach(link => {
+              if (link.href.includes('/marketplace')) {
+                  // Update the href
+                  link.href = link.href.replace('/marketplace', '/products/product-catalog');
+        
+                  // Update the inner HTML
+                  link.innerHTML = `
+                      <span class="margin-right-5 fis-text-green display-block"></span>
+                      Browse all products
+                      <svg class="fis-icon fis-icon-arrow fis--green">
+                          <title></title>
+                          <use xlink:href="#fis-icon-arrow"></use>
+                      </svg>
+                  `;
+              }
+          });
+        });
+      } 
+      
+
+      if (primaryTarget || fallbackTarget) {
+        const target = primaryTarget || fallbackTarget;
+        const searchString = window.location.search;
+        if (!document.getElementById('products-overview-cta')){
+          if (searchString.includes('loc=specs')){
+              target.insertAdjacentHTML('beforebegin', markup);
+              const newCTAElement = document.getElementById('products-page-cta');
+              if(newCTAElement){
+                  newCTAElement.setAttribute('style','display:none');
+                  newCTAElement.classList.add('direct-link');
+              }
+          } else {
+              target.insertAdjacentHTML('beforebegin', markup);
+          }
+         
+        }
+        
+
+        // Modify "Go to marketplace" link if it exists
+        if (primaryTarget) {
+          const links = primaryTarget.querySelectorAll('.cta-box-link a');
+          links.forEach(link => {
+            if (link.textContent.trim() === 'Go to marketplace' || link.textContent.trim() === 'Go to Marketplace' || link.textContent.trim() === 'See all marketplace') {
+              link.textContent = 'View all products';
+              link.setAttribute('href', '/products/product-catalog');
+            }
+          });
+        }
+
+        clearInterval(interval);
+      } else if (++attempts >= maxAttempts) {
+        clearInterval(interval);
+        //console.warn('Target element for markup insertion not found after waiting.');
+      }
+    }, 200);
+  }
+  
+  //ADD THE PRODUCT MAP LINK
+  if (path.startsWith('/products')) {
+  const footerMarkup = `<li><a href="/products/product-map" class="" target=""><span class="fis-text-picton-blue"> </span>Product Map</a></li>
+  <style>.fis-footer-wrapper .fis-copyright .ancillary-nav ul{display:flex;flex-wrap:wrap;justify-content:center}.fis-footer-wrapper .fis-copyright .ancillary-nav ul li{margin-right:10px;margin-bottom:8px}.fis-footer-wrapper .fis-copyright .ancillary-nav ul li:last-child{margin-right:0;}@media(min-width:992px){.fis-footer-wrapper .fis-copyright .ancillary-nav ul li:nth-of-type(7){margin-right: 10px;}}</style>`;
+  const attemptLimit = 25;
+  let attemptAmt = 0;
+  const intervalCheck = setInterval(() => {
+      const targetElement = document.querySelector('.ancillary-nav ul'); // moved inside
+      if (targetElement) {
+          //console.log('Found element and appending to footer');
+          clearInterval(intervalCheck); // also fix: should be clearInterval, not clear
+          targetElement.insertAdjacentHTML('beforeend', footerMarkup);
+      } else {
+          attemptAmt += 1;
+          //console.log('Waiting for .ancillary-nav. Attempt #: ' + attemptAmt);
+          if (attemptAmt >= attemptLimit){
+              clearInterval(intervalCheck);
+              //console.log('Interval function timed out');
+          }
+      }
+  }, 200);
+}
+
+})();

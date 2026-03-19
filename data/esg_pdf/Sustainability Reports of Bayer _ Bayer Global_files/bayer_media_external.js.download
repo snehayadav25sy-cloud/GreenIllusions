@@ -1,0 +1,41 @@
+/**
+ * @file bayer_media_external.js
+ *
+ * Defines the behavior of the bayer media external.
+ */
+
+(function ($, Drupal, drupalSettings) {
+  'use strict';
+
+  $(document).ready(function () {
+
+    if ('undefined' !== typeof OnetrustActiveGroups) {
+      if (OnetrustActiveGroups.indexOf('C0002') !== -1) {
+
+        // Replace youtube base url based the user cookie accepteance.
+        if ($('.video-embed-field-provider-youtube iframe').length > 0) {
+          $('.video-embed-field-provider-youtube iframe').each(function (index) {
+            var url = $( this ).attr('src');
+            var replace_url = url.replace(/youtube-nocookie.com/g, "youtube.com");
+            $(this).attr('src', replace_url);
+          });
+        }
+
+        // Add  dnt query parameter to vimeo url based the user cookie accepteance.
+        // Setting this parameter to "true" will block the player from tracking any
+        // session data, including all cookies and analytics.
+        if ($('.video-embed-field-provider-vimeo iframe').length > 0) {
+          $('.video-embed-field-provider-vimeo iframe').each(function (index) {
+            var url = new URL($( this ).attr('src'));
+            var search_params = url.searchParams;
+            // new value of "dnt" is set to "false"
+            search_params.set('dnt', '0');
+            var new_url = url.toString();
+            $(this).attr('src', new_url);
+          });
+        }
+      }
+    }
+  });
+
+})(jQuery, Drupal, drupalSettings);

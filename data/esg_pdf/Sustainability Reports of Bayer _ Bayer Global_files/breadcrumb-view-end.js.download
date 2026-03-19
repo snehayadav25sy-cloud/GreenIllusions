@@ -1,0 +1,17 @@
+(function ($, Drupal) {
+  $(document).ready(function(){
+    breadcrumbScrollLeft();
+
+    $(window).on('resize', function () {
+      breadcrumbScrollLeft();
+    });
+
+  });
+
+  function breadcrumbScrollLeft() {
+    if ($(window).width() < 480) {
+      var olWidth = $(".breadcrumb ol").width();
+      $(".breadcrumb ol").animate({ scrollLeft: olWidth + 200 }, 1000);
+    }
+  }
+}(jQuery, Drupal));

@@ -1,0 +1,8 @@
+.article-tag.selected {
+    border: 1px solid #0f1c50;
+}
+
+.article-tag.selected span.cross {
+    margin-left: 10px;
+    font-weight: bold;
+}

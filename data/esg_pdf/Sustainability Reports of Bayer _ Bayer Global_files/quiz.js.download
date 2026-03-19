@@ -1,0 +1,214 @@
+/**
+ * @file quiz.js
+ *
+ * Defines the behavior of the bayer quiz.
+ */
+
+(function ($, Drupal, drupalSettings) {
+  'use strict';
+
+  var q_a, quizImg, resultKicker, resultDescription, nextBtn, questionCount, questionProgress, answerStatus, answerDescription, correctAnswer, resultText,
+    shortAnswerInput, submitBtn, confirmationText, shortText, ansDiv;
+  var totalQuestions = [];
+  var totalScore = [];
+  var scorePercentage = [];
+
+  Drupal.behaviors.bayerQuiz = {
+    attach: function (context) {
+      q_a = drupalSettings.q_a;
+    }
+  }
+
+  $(document).ready(function () {
+    $('.paragraph--type--quiz-banner').each(function (quiz_index) {
+      totalQuestions[quiz_index] = 0;
+      totalScore[quiz_index] = 0;
+      scorePercentage[quiz_index] = 0;
+      quizImg = $(this).find('.quiz-results .quiz-results-right').clone();
+      quizImg.appendTo($(this).find('.quiz-introduction'));
+      $(this).find('.quiz-introduction .quiz-results-right').addClass('quiz-intro-right').removeClass('quiz-results-right');
+      resultKicker = "<div class='result-kicker'></div>";
+      $(resultKicker).prependTo($(this).find('.quiz-results .quiz-results-left'));
+      resultDescription = "<div class='result-description'></div>";
+      $(resultDescription).insertAfter($(this).find('.quiz-results .quiz-results-left .field--name-field-score'));
+      nextBtn = "<a class='next-cta'>" + q_a[quiz_index].field_next_label + "</a>";
+      answerStatus = "<div class='answer-status'></div>";
+      totalQuestions[quiz_index] = $(this).find('.question-and-answer .paragraph--type--question-and-answer').length;
+      shortAnswerInput = "<input class='short-answer-input'>";
+      submitBtn = "<a class='submit-cta'>" + q_a[quiz_index].field_short_ans_submit_label + "</a>";
+      confirmationText = "<div class='confirmation-text'>" + q_a[quiz_index].field_short_ans_confirm_text + "</div>";
+      shortText = "<div class='short-text'></div>";
+
+      $(this).find('.quiz-introduction .quiz-intro-right .field--name-field-media .field--name-image').each(function () {
+        imageFit($(this));
+      });
+
+      $(this).find('.paragraph--type--question-and-answer .quiz-question .quiz-question-right .field--name-field-media .field--name-image').each(function () {
+        imageFit($(this));
+      });
+
+      $(this).find('.quiz-results .quiz-results-right .field--name-field-media .field--name-image').each(function () {
+        imageFit($(this));
+      });
+
+      if (!$(this).find('.quiz-introduction').length) {
+        $(this).find('.question-and-answer').show();
+        $(this).find('.question-and-answer .field--name-field-question-and-answer .field__item:first-child .paragraph--type--question-and-answer').show();
+      }
+
+      $(this).find('.paragraph--type--question-and-answer').each(function (index) {
+
+        $(nextBtn).appendTo($(this).find('.quiz-question .quiz-question-right .answer-details'));
+        $(answerStatus).prependTo($(this).find('.quiz-question .quiz-question-right .answer-details'));
+
+        questionProgress = q_a[quiz_index].field_question_progress.replace("[quiz:question:number]", (index + 1)).replace("[quiz:question:count]", totalQuestions[quiz_index]);
+        questionCount = "<div class='question-count'>" + questionProgress + "</div>";
+        $(questionCount).prependTo($(this).find('.quiz-question .quiz-question-left'));
+        if (q_a[quiz_index].q_a[index].quiz_type == 'short-text') {
+          $(shortAnswerInput).appendTo($(this).find('.quiz-question .quiz-question-left'));
+          $('.short-answer-input').attr("placeholder", q_a[quiz_index].field_short_ans_placeholder);
+          $(submitBtn).appendTo($(this).find('.quiz-question .quiz-question-left'));
+          $(confirmationText).appendTo($(this).find('.quiz-question .quiz-question-left')).hide();
+          $(shortText).appendTo($(this).find('.quiz-question .quiz-question-left')).hide();
+        }
+
+        $(this).find('.quiz-question .quiz-question-right .answer-details .next-cta').on('click', function () {
+          if ($(this).parents('.paragraph--type--question-and-answer').parent().is(':last-child')) {
+            resultText = $(this).parents('.paragraph--type--quiz-banner').find('.quiz-results .quiz-results-left .field--name-field-score').text();
+            resultText = resultText.replace("[quiz:score]", totalScore[quiz_index]).replace("[quiz:question:count]", totalQuestions[quiz_index]);
+            $(this).parents('.paragraph--type--quiz-banner').find('.quiz-results .quiz-results-left .field--name-field-score').text(resultText);
+
+            scorePercentage[quiz_index] = ((totalScore[quiz_index]) / (totalQuestions[quiz_index])) * 100;
+
+            if (scorePercentage[quiz_index] < q_a[quiz_index].field_par_score) {
+              $(this).parents('.paragraph--type--quiz-banner').find('.quiz-results .quiz-results-left .result-kicker').html(q_a[quiz_index].field_fail_label);
+              $(this).parents('.paragraph--type--quiz-banner').find('.quiz-results .quiz-results-left .result-description').html(q_a[quiz_index].field_fail_description);
+            } else {
+              $(this).parents('.paragraph--type--quiz-banner').find('.quiz-results .quiz-results-left .result-kicker').html(q_a[quiz_index].field_success_label);
+              $(this).parents('.paragraph--type--quiz-banner').find('.quiz-results .quiz-results-left .result-description').html(q_a[quiz_index].field_pass_description);
+            }
+
+            $(this).parents('.paragraph--type--question-and-answer').hide();
+            $(this).parents('.paragraph--type--quiz-banner').find('.quiz-results').css('display', 'flex');
+          } else {
+            $(this).parents('.paragraph--type--question-and-answer').hide();
+            $(this).parents('.paragraph--type--question-and-answer').parent().next().find('.paragraph--type--question-and-answer').show();
+          }
+        });
+
+        $(this).find('.quiz-question .quiz-question-left .submit-cta').on('click', function () {
+          $(this).hide();
+          $(this).parents('.quiz-question-left').find('.short-answer-input').hide();
+          $(this).parents('.quiz-question').find('.quiz-question-left .short-text').text($(this).parents('.quiz-question-left').find('.short-answer-input').val());
+          $(this).parents('.quiz-question').find('.quiz-question-left .confirmation-text').show();
+          $(this).parents('.quiz-question').find('.quiz-question-left .short-text').show();
+
+          correctAnswer = q_a[quiz_index].q_a[index].answer;
+          if ($(this).parents('.quiz-question-left').find('.short-answer-input').val().toLowerCase() === correctAnswer.toLowerCase()) {
+            $(this).parents('.quiz-question').find('.quiz-question-right .answer-details .answer-status').text(q_a[quiz_index].field_correct_label);
+            totalScore[quiz_index]++;
+            $(this).parents('.quiz-question').find('.quiz-question-left .short-text').addClass('correct');
+          } else {
+            $(this).parents('.quiz-question').find('.quiz-question-right .answer-details .answer-status').text(q_a[quiz_index].field_incorrect_label);
+            answerDescription = q_a[quiz_index].field_correct_answer.replace("[quiz:answer]", "<span class='correct-answer'>" + q_a[quiz_index].q_a[index].answer + "</span>");
+            ansDiv = "<div class='correct-text'>" + answerDescription + "</div>";
+            $(ansDiv).insertAfter($(this).parents('.quiz-question').find('.quiz-question-right .answer-details .answer-status'));
+            $(this).parents('.quiz-question').find('.quiz-question-left .short-text').addClass('incorrect');
+          }
+          $(this).parents('.quiz-question').find('.quiz-question-right .answer-details').css('display', 'flex');
+        });
+
+        $(this).find('.quiz-question .quiz-question-left .field--name-field-options .field__item').on('click', function () {
+          correctAnswer = q_a[quiz_index].q_a[index].answer;
+
+          $(this).parent().find('.field__item').each(function () {
+            $(this).css('pointer-events', 'none');
+          });
+
+          if ($(this).text().toLowerCase() === correctAnswer.toLowerCase()) {
+            $(this).parents('.quiz-question').find('.quiz-question-right .answer-details .answer-status').text(q_a[quiz_index].field_correct_label);
+            totalScore[quiz_index]++;
+            $(this).addClass('correct');
+          } else {
+            $(this).parents('.quiz-question').find('.quiz-question-right .answer-details .answer-status').text(q_a[quiz_index].field_incorrect_label);
+            answerDescription = q_a[quiz_index].field_correct_answer.replace("[quiz:answer]", "<span class='correct-answer'>" + q_a[quiz_index].q_a[index].answer + "</span>");
+            ansDiv = "<div class='correct-text'>" + answerDescription + "</div>";
+            $(ansDiv).insertAfter($(this).parents('.quiz-question').find('.quiz-question-right .answer-details .answer-status'));
+            $(this).addClass('incorrect');
+            $(this).parent().find('.field__item').each(function () {
+              if ($(this).text().toLowerCase() === correctAnswer.toLowerCase()) {
+                $(this).addClass('correct');
+              }
+            });
+          }
+          $(this).parents('.quiz-question').find('.quiz-question-right .answer-details').css('display', 'flex');
+        });
+
+        $(this).find('.quiz-question .quiz-question-left .field--name-field-options .field__item').on('mousedown', function () {
+          $(this).addClass('selected');
+        });
+
+        $(this).find('.quiz-question .quiz-question-left .short-answer-input').on('input', function () {
+          var inputVal = $(this).val();
+          if (inputVal) {
+            $(this).parent().find('.submit-cta').addClass("active");
+          } else {
+            $(this).parent().find('.submit-cta').removeClass("active");
+          }
+        });
+      });
+
+      $(this).find('.quiz-introduction .quiz-intro-left .field--name-field-attempt-label').on('click', function () {
+        $(this).parents('.quiz-introduction').hide();
+        $(this).parents('.paragraph--type--quiz-banner').find('.question-and-answer').show();
+        $(this).parents('.paragraph--type--quiz-banner').find('.question-and-answer .field--name-field-question-and-answer .field__item:first-child .paragraph--type--question-and-answer').show();
+      });
+
+      $(this).find('.quiz-results .quiz-results-left .field--name-field-reattempt-label').on('click', function () {
+        $(this).parents('.quiz-results').hide();
+
+        if (!$(this).parents('.paragraph--type--quiz-banner').find('.quiz-introduction').length) {
+          $(this).parents('.paragraph--type--quiz-banner').find('.question-and-answer').show();
+          $(this).parents('.paragraph--type--quiz-banner').find('.question-and-answer .field--name-field-question-and-answer .field__item:first-child .paragraph--type--question-and-answer').show();
+        } else {
+          $(this).parents('.paragraph--type--quiz-banner').find('.quiz-introduction').css('display', 'flex');
+        }
+
+        $(this).parents('.paragraph--type--quiz-banner').find('.question-and-answer .paragraph--type--question-and-answer .quiz-question .quiz-question-right .answer-details').each(function (question_index) {
+          $(this).css('display', 'none');
+          $(this).parents('.quiz-question').find('.quiz-question-right .answer-details .field--name-field-description').each(function () {
+            $(this).html(q_a[quiz_index].q_a[question_index].answer_description[0].value);
+          });
+          $(this).parents('.quiz-question').find('.quiz-question-left .field--name-field-options .field__item').each(function () {
+            $(this).css('pointer-events', 'auto');
+            $(this).removeClass('selected');
+            $(this).removeClass('correct');
+            $(this).removeClass('incorrect');
+          });
+          $(this).parents('.quiz-question').find('.quiz-question-right .answer-details .correct-text').each(function () {
+            $(this).remove();
+          });
+          $(this).parents('.quiz-question').find('.quiz-question-left .short-answer-input').show();
+          $(this).parents('.quiz-question').find('.quiz-question-left .submit-cta').show();
+          $(this).parents('.quiz-question').find('.quiz-question-left .confirmation-text').hide();
+          $(this).parents('.quiz-question').find('.quiz-question-left .short-text').hide();
+          $(this).parents('.quiz-question').find('.quiz-question-left .short-text').removeClass('correct');
+          $(this).parents('.quiz-question').find('.quiz-question-left .short-text').removeClass('incorrect');
+          $(this).parents('.quiz-question').find('.quiz-question-left .short-answer-input').val("");
+          $(this).parents('.quiz-question').find('.quiz-question-left .submit-cta').removeClass("active");
+        });
+
+        totalScore[quiz_index] = 0;
+        scorePercentage[quiz_index] = 0;
+        $(this).parents('.quiz-results-left').find('.field--name-field-score').text(q_a[quiz_index].field_score);
+      });
+    });
+  });
+
+  function imageFit(container) {
+    var imageUrl = container.find("img").prop("src");
+    if (imageUrl) {
+      container.css("backgroundImage", 'url(' + imageUrl + ')').addClass("custom-object-fit");
+    }
+  }
+})(jQuery, Drupal, drupalSettings);

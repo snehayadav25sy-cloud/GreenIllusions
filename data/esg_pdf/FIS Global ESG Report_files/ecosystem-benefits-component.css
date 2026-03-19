@@ -1,0 +1,49 @@
+.eco-benefit-wrapper .eco-title-cont, .eco-benefit-wrapper .eco-card-left, .eco-benefit-wrapper .eco-card-right, .eco-benefit-wrapper .col-content-left, .eco-benefit-wrapper .col-content-right, .eco-benefit-wrapper .eco-content-left, .eco-benefit-wrapper .eco-video-right {width: 50%;}
+.eco-benefit-wrapper .content-row, .eco-benefit-wrapper .eco-card-right, .eco-benefit-wrapper .list-icon-content {display: flex;}
+.eco-benefit-wrapper .eco-card-right {padding-left: 60rem;}
+.eco-benefit-wrapper .list-icon-content {margin-bottom: 10rem; padding-right: 30rem; font-size: 14px;}
+.eco-benefit-wrapper .list-icon {width: 20px; height: 20px; min-width: 20px; margin-right: 10px;}
+.eco-benefit-wrapper .list-icon span { display: inline-block; border-radius: 50%; width: 20px; height: 20px; overflow: hidden; position: relative;}
+.eco-benefit-wrapper .list-icon svg {position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: 14px; height: 14px;}
+.eco-benefit-wrapper .eco-title {font: normal 24px/24px 'Roobert Medium',sans-serif; margin-bottom: 15px;}
+.eco-benefit-wrapper .eco-subtitle {font-size: 18px; font-family: 'Roobert Regular',sans-serif; padding-bottom: 10px; font-weight: 400;}
+.eco-benefit-wrapper .vidyard-player-container {border-radius: 10px;}
+.eco-benefit-wrapper .eco-video-right .video-description {font-size: 14px; font-family: Roobert Medium, sans-serif; text-align: center; margin-top: 8rem;}
+.eco-benefit-wrapper .eco-cta-container a {font-size: 14px; font-family: Roobert Medium, sans-serif; display: inline-flex; align-items: center;}
+.eco-benefit-wrapper .eco-description p {font-size: 14px;}
+.eco-benefit-wrapper .eco-cta-container svg.fis-icon-arrow {width: 1.8em; margin-left: 7px; transition: all 0.6s;}
+.eco-benefit-wrapper .eco-cta-container a:hover svg.fis-icon-arrow {margin-left: 15px;}
+.eco-benefit-wrapper .eco-video-right .list-icon-content {padding-right: 0;}
+.eco-benefit-wrapper .eco-video-right .fis-media-image {top: 0; max-height: 180rem; border-radius: 10px;}
+.eco-benefit-wrapper .eco-video-right .fis-media-image svg.fis-icon {position: absolute; top: 50%; right: 0; bottom: 0; left: 50%; transform: translate(-50%, -50%);}
+.eco-benefit-wrapper .product-suite-results .suite-card-count {font-size: 14.3px !important;}
+
+.eco-benefit-wrapper .product-suite-card {padding: 30px 0;}
+.eco-benefit-wrapper .product-suite-filters.content-width.row {display: flex; margin-top: 25rem; flex-wrap: wrap;}
+.eco-benefit-wrapper .product-suite-filters .product-filter.active {border: 2px solid #05A399;}
+.eco-benefit-wrapper .product-suite-filters .product-filter {border: 2px solid #CCCECF; margin-bottom: 20px;}
+.eco-benefit-wrapper .product-suite-filters .product-filter:hover {border: 2px solid #05A399;}
+.eco-benefit-wrapper .product-suite-filters .product-filter {cursor: pointer; transition: all .3s ease-in-out; font-family: 'Roobert Medium', sans-serif; font-size: 14px; margin-right: 20rem; padding: 10rem 16rem; border: 2px solid #ebebeb; border-radius: 67rem; min-width: 60px; display: flex; justify-content: center;}
+.eco-benefit-wrapper .product-suite-filters .product-filter:hover {border: 2px solid #009775;}
+.eco-benefit-wrapper .product-suite-filters .product-filter.active {border: 2px solid #009775;}
+.eco-benefit-wrapper .product-suite-results {margin-top: 20px; font-family: 'Roobert Semibold', sans-serif;}
+
+@media(min-width: 991px){
+  .eco-benefit-wrapper .list-icon-content, .eco-benefit-wrapper .eco-description p, .eco-benefit-wrapper .eco-cta-container a {font-size: 16px;}
+  .eco-benefit-wrapper .eco-content-left, .eco-benefit-wrapper .eco-video-right {flex: 1;}
+}
+
+@media(max-width: 830px){
+  .eco-benefit-wrapper .content-row {flex-direction: column;}
+  .eco-benefit-wrapper .eco-title-cont, .eco-benefit-wrapper .eco-card-left, .eco-benefit-wrapper .eco-card-right {width: 100%;}
+  .eco-benefit-wrapper .eco-card-right {padding: 40px 0 0 0;}
+
+  .eco-benefit-wrapper .product-suite-filters .product-filter{margin-bottom:15rem}
+}
+
+@media(max-width: 576px){
+  .eco-benefit-wrapper .eco-card-right {flex-direction: column;}
+  .eco-benefit-wrapper .eco-content-left, .eco-benefit-wrapper .eco-video-right {width: 100%;}
+  .eco-benefit-wrapper .eco-video-right {padding-top: 30px;}
+  .eco-benefit-wrapper .list-icon-content {padding-right: 0;}
+}

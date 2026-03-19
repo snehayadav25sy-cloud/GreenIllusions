@@ -1,0 +1,23 @@
+(function ($, Drupal, drupalSettings) {
+  'use strict';
+  Drupal.behaviors.searchFormSubmit = {
+    attach: function (context) {
+      $('.search-form').submit(function (e) {
+        e.preventDefault();
+        var search_term = $(this).find('.site-search-input').val();
+        var langCode = drupalSettings.path.currentLanguage;
+        if (search_term != '') {
+          var country_context = drupalSettings.country_context;
+          var params = {
+            q: $(this).find('.site-search-input').val(),
+            context: $(this).find("input[name=context]").val(),
+            country: (country_context) ? country_context : '',
+            order_by: $(this).find("input[name=order_by]").val(),
+          };
+          var str = jQuery.param( params );
+          window.location.href = "/" + langCode + "/search?" + str;
+        }
+      });
+    }
+  };
+})(jQuery, Drupal, drupalSettings);

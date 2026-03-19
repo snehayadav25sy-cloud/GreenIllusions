@@ -1,0 +1,45 @@
+.fis-localnav-wrapper {width: 100%; float: left; padding: 20rem 30rem; z-index: 99999; box-shadow: 1px 3px 6px rgba(0,0,0,.2); overflow: hidden; white-space: nowrap;}
+.fis-localnav-wrapper.sticky{position: fixed; top: 0;}
+.fis-localnav-wrapper ul.fis-localnav-prodname {float: left;}
+.fis-localnav-wrapper ul.fis-localnav-prodname li {display: inline-block; padding-right: 30rem}
+.fis-localnav-wrapper ul.fis-localnav-prodname li, .fis-localnav-wrapper ul.fis-localnav-prodname li a {font-size: 16rem; line-height: 20rem; font-family: 'Roobert Medium', sans-serif; transition: all 0.6s; text-transform: capitalize !important; position: relative;}
+.fis-localnav-wrapper ul.fis-localnav-prodname li a .text-lower {text-transform: none;}
+.fis-main-nav.sticky-active {transform: translateY(-85px)!important;}
+
+.fis-localnav-wrapper ul.fis-localnav-left {float: left;}
+.fis-localnav-wrapper ul.fis-localnav-left li {display: inline-block; padding-right: 30rem}
+.fis-localnav-wrapper ul.fis-localnav-left li a {font-size: 16rem; line-height: 20rem; transition: all 0.6s; text-transform: none;}
+.fis-localnav-wrapper ul.fis-localnav-left li a.active {color: #4BCD3E!important;}
+.fis-localnav-wrapper ul.fis-localnav-left li a:hover {color: #4BCD3E !important;}
+
+.fis-localnav-wrapper ul.fis-localnav-right {margin-left: auto;}
+.fis-localnav-wrapper ul.fis-localnav-right li {display: inline-block; padding-right: 15rem}
+.fis-localnav-wrapper ul.fis-localnav-right li a {font-size: 16rem; line-height: 20rem; font-family: 'Roobert Medium', sans-serif; transition: all 0.6s;}
+.fis-localnav-wrapper ul.fis-localnav-right li:last-child {padding-right: 0;}
+.fis-localnav-wrapper ul.fis-localnav-right li:nth-child(2) {border-left: 1px solid #000; padding-left: 15px;}
+.fis-localnav-wrapper ul.fis-localnav-right li a.active {color: #1BAADE;}
+.fis-localnav-wrapper ul.fis-localnav-right li a:focus, .fis-localnav-wrapper ul.fis-localnav-right li a:active, .fis-localnav-wrapper ul.fis-localnav-right li a:hover {color: #4BCD3E !important;}
+.fis-localnav-wrapper ul.fis-localnav-right a svg {padding-left: 5rem; position: relative; top: 3rem; left: 0; transition: all 0.6s; width: 1.8em;}
+.fis-localnav-wrapper ul.fis-localnav-right a:hover svg {left: 5rem;}
+ul.fis-localnav-prodname li:last-child {position: relative; margin-right: 30rem;}
+ul.fis-localnav-prodname li:last-child::after {content: ""; position: absolute; right: 0; top: 0; height: 100%; width: 1px; background: #000;
+display: block !important; opacity: 1;}
+ul.fis-localnav-prodname li:nth-child(1)::before {content: ""; border-top: solid 2px currentColor; border-right: solid 2px currentColor; -webkit-transform: rotate(45deg); transform: rotate(45deg); position: absolute; right: 10rem; height: 6px; width: 6px; top: 8rem;}
+.fis-localnav-wrapper ul.fis-localnav-prodname li a:hover {color: #4bcd3e !important;}
+ul.fis-localnav-left li:nth-of-type(n + 1) {text-transform: uppercase;}
+.fis-localnav-wrapper .local-nav-logo svg {position: relative; max-width: 62px; height: 30px; margin-top: -5px; margin-bottom: -5px;}
+.fis-localnav-container {align-items: center; display: flex;}
+.fis-localnav-wrapper ul.fis-localnav-prodname li {font-family: 'Roobert SemiBold', sans-serif;}
+
+.fis-localnav-toggle-wrapper {display: flex; background: #00000029; border-radius: 67rem; padding: 3px; width: max-content; margin: 0;}
+.fis-localnav-toggle-wrapper .switch-button {border-radius: 67rem; padding: 10px 12px; font: normal 16rem 'Roobert Medium', sans-serif; line-height: 1 !important; color: #000; margin: 0; display: block;}
+.fis-localnav-toggle-wrapper .switch-button:hover {background: #fff; color: #4bcd3e;}
+.fis-localnav-toggle-wrapper .switch-button.active {background: #fff;}
+.fis-localnav-wrapper ul.fis-localnav-prodname .l3productname::before, .fis-localnav-wrapper .local-nav-logo::before {display: none;}
+
+@media screen and (max-width: 991px){
+    .fis-localnav-wrapper::-webkit-scrollbar {width: 0; height: 0; background: transparent;}
+    .fis-localnav-wrapper ul.fis-localnav-right {float: left;}
+    .fis-localnav-container {min-width: 1130rem; width: max-content; display: flex;}
+    .fis-localnav-wrapper {overflow-x: scroll;}
+}    

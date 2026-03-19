@@ -1,0 +1,786 @@
+/* Minification failed. Returning unminified contents.
+(58,19-20): run-time error JS1195: Expected expression: )
+(58,22-23): run-time error JS1195: Expected expression: >
+(301,73-74): run-time error JS1195: Expected expression: >
+(304,10-11): run-time error JS1195: Expected expression: )
+(307,38-39): run-time error JS1195: Expected expression: >
+(311,9-10): run-time error JS1002: Syntax error: }
+(318,9-10): run-time error JS1002: Syntax error: }
+(318,10-11): run-time error JS1197: Too many errors. The file might not be a JavaScript file: )
+(309,29-35): run-time error JS1018: 'return' statement outside of function: return
+ */
+$.extend($.expr[':'], {
+    attrStartsWith: function (el, _, b) {
+        for (var i = 0, atts = el.attributes, n = atts.length; i < n; i++) {
+            if (atts[i].nodeName.toLowerCase().indexOf(b[3].toLowerCase()) === 0) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+});
+
+var SearchInput = {
+
+    init: function () {
+        SearchInput.getElements().each(function (i, elem) {
+            var $root = $(elem);
+            var $input = $("input", $root);
+            if ($input.length == 0) return;
+            $input[0].outerHTML = $input[0].outerHTML;
+            $input = $("input", $root);
+            var rateLimiter = new RateLimiter($input, function () {
+                SearchInput.doPredictiveSearch($root, $input);
+            }, 600);
+            $input.on("keyup", rateLimiter.run);
+        });
+        $(document).on("click", function (event) {
+            var $root = SearchInput.getElements();
+            if ($root.length === 0) return;
+            if ($(event.target).closest($root).length === 0) {
+                // if clicking outside the search input, hide the suggestions
+                var $resultArea = $(".tt-menu", $root);
+                $resultArea.hide();
+            }
+        });
+    },
+
+    doPredictiveSearch: function ($root, $input) {
+        if ($input.data("autocomplete") == 0) return;
+        $.post({ url: '/api/SearchInput/SuggestResult', data: { searchInputItemId: $input.attr("data-searchInputItemId"), searchKeyword: $input.val().toLowerCase() } }).done(function (result) {
+            var $resultArea = $(".tt-menu", $root);
+            if (result && result.trim()) {
+                $resultArea.html(result);
+                $(".tt-suggestion.tt-selectable", $resultArea).each(function (i, elem) {
+                    $elem = $(elem);
+                    $elem.on("click", function () {
+                        window.location.href = $elem.attr("data-resultUrl");
+                    });
+                });
+                $resultArea.show();
+            }
+            else {
+                $resultArea.hide();
+            }
+        });
+    },
+
+    getElements: () => $(".search-input-js-component")
+
+};
+
+function RateLimiter(f, timeout) {
+    this.f = f;
+    this.timeout = timeout;
+    this.runId = 0;
+    var rateLimiter = this;
+    this.run = function () {
+        var currentRunId = ++rateLimiter.runId;
+        setTimeout(function () {
+            if (currentRunId < rateLimiter.runId) return;
+            rateLimiter.f();
+        }, rateLimiter.timeout);
+
+    }
+}
+
+function RateLimiter(inputElem, f, timeout) {
+    this.inputElem = inputElem;//riferimento al field della form
+    this.f = f;
+    this.timeout = timeout;
+    this.runId = 0;
+    var rateLimiter = this;
+    this.run = function (inputElem) {
+        var currentRunId = ++rateLimiter.runId;
+        setTimeout(function () {
+            if (currentRunId < rateLimiter.runId) return;
+            rateLimiter.f(inputElem);
+        }, rateLimiter.timeout);
+
+    }
+}
+
+var Form = {
+    validateField: function ($input, validationErrors) {
+        $input.removeClass("is-valid").removeClass("is-invalid");
+        $input.addClass(validationErrors.length == 0 ? "is-valid" : "is-invalid");
+
+        $("div.invalid-feedback", $input.parent()).remove();
+        for (var i = 0; i < validationErrors.length; i++) {
+            var $divError = $('<div class="invalid-feedback"></div>').text(validationErrors[i]);
+            $input.parent().append($divError);
+        }
+    },
+    validateRadioField: function ($field, validationErrors) {
+        $("input", $field).removeClass("is-valid").removeClass("is-invalid");
+        $("input", $field).addClass(validationErrors.length == 0 ? "is-valid" : "is-invalid");
+
+        $("div.invalid-feedback", $field).remove();
+        for (var i = 0; i < validationErrors.length; i++) {
+            var $divError = $('<div class="invalid-feedback"></div>').text(validationErrors[i]);
+            $("div.form-check", $field).append($divError);
+        }
+    },
+    init: function () {
+        var forms = document.getElementsByClassName('js-form-component');
+        for (var i = 0; i < forms.length; i++) {
+            forms[i].outerHTML = forms[i].outerHTML;//unico modo per eliminare un event handler anonimo aggiunto mediante addEventListener (da Torpedo)
+            var $root = $(forms[i]);
+
+
+            var $inputs = $("input[type='text'], input[type='email'], input[type='tel'], textarea", $root);
+            $.each($inputs, function () {
+                console.log(this + " : " + this.id);
+                var elementid = "#"+this.id.replace("{", "\\{").replace("}", "\\}").replaceAll("-", "\\-");
+                var rateLimiter = new RateLimiter(this, function () {
+                    $.post({
+                        url: '/api/AjaxForm/ValidateField', data: { formFieldId: rateLimiter.inputElem.id, value: rateLimiter.inputElem.value }
+                    })
+                        .done(function (result) {
+                            var jqElem = $(elementid, $root);
+                            Form.validateField(jqElem, result);
+                        })
+                }, 600);
+                this.addEventListener("keyup", function (e) {
+                    e.preventDefault();
+                    rateLimiter.run(this)
+                });
+            });
+
+            $("input[type='checkbox']", $root).on('click', function (e) {
+                var $input = $(this);
+                $.post({ url: '/api/AjaxForm/ValidateField', data: { formFieldId: $input.attr("id"), value: $input.prop("checked") ? "on" : "off" } })
+                    .done(function (result) {
+                        Form.validateField($input, result);
+                    });
+            });
+
+            $("select", $root).change(function () {
+                var $input = $(this);
+                console.log($input.val());
+                $.post({ url: '/api/AjaxForm/ValidateField', data: { formFieldId: $input.attr("id"), value: $input.val() } })
+                    .done(function (result) {
+                        Form.validateField($input, result);
+                    });
+            });
+
+            $("input[type=radio]", $root).change(function () {
+                var $input = $(this);
+                console.log($input.val());
+                $.post({ url: '/api/AjaxForm/ValidateField', data: { formFieldId: $input.attr("name"), value: $input.val() } })
+                    .done(function (result) {
+                        Form.validateRadioField($input.parents(".js-form-field-radio"), result);
+                    });
+            });
+
+            if ($root.attr("data-userecaptcha") === 'true' && Form.recaptchaLoaded) {
+                //se si usa il recaptcha la submit del form non deve fare nulla, si usa l'handler di recaptcha
+                $root.on("submit", function (e) { e.preventDefault(); });
+
+                var button = $root.find("button[type=submit]");
+                if (button.length > 0) {
+                    //per impostare la callback di submit di recaptcha � necessario che vi sia un bottone di submit
+                    var sitekey = $("recaptcha").attr("data-sitekey");
+                    var recaptchaWidgetId = "";
+
+                    //si imposta la callback della submit di recaptcha
+                    recaptchaWidgetId = grecaptcha.render(button[0], {
+                        'sitekey': sitekey,
+                        'size': 'invisible',
+                        'callback': Form.formSubmitRecaptcha($root)
+                    });
+
+                }
+            }
+            else {
+                //se non si usa recaptcha si utilizza l'handler classico di submit
+                $root.on("submit", Form.formSubmit($root));
+            }
+        }
+        Form.initAutomaticHiddenFields();
+    },
+    formSubmitInternal: function (root, useRecaptcha, token) {
+        if (!useRecaptcha) {
+            root.off("submit");
+        }
+        if (useRecaptcha && Form.recaptchaLoaded) {
+            //fa s� che si possa riutilizzare il bottone
+            grecaptcha.reset();
+        }
+        $("button", root).attr("disabled", true);
+        var loader = $(".form-status.text-center")
+        var success = $(".alert.alert-success").hide();
+        var danger = $(".alert.alert-danger").hide();
+
+        var pardotPiAId = (typeof piAId !== 'undefined') ? piAId : null;
+
+        $("input[data-pageUrl]").val(window.location.href.split(/[?#]/)[0]);
+        fieldValues = $.map(root.find("input[type=text],input[type=email],input[type=tel],input[type=hidden],textarea,select"), function (x) { return { FieldId: $(x).attr("id"), Value: $(x).val() } })
+            .concat(
+                $.map(root.find("input[type=radio]:checked"), function (x) { return { FieldId: $(x).attr("name"), Value: $(x).val() } })
+            ).concat(
+                $.map(root.find("input[type=checkbox]"), function (x) { return { FieldId: $(x).attr("id"), Value: $(x).prop("checked") ? "on" : "off" } })
+            );
+        loader.show();
+        console.log("pardotPiAId: " + pardotPiAId);
+        $.post({ url: '/api/AjaxForm/SubmitForm', data: { formId: root.attr("id"), fieldValues: fieldValues, recaptchaToken: token, pardotVisitorId: Pardot.getVisitorId(pardotPiAId), pardotVisitorHash: Pardot.getVisitorHash(pardotPiAId), pageAbsoluteURL: window.location.search } })
+            .done(function (result) {
+                loader.hide();
+
+                var validationErrorsByField = result.ValidationErrors;
+                if (validationErrorsByField.length == 0) {
+                    root.hide(); //form tag
+                    success.show(); //alert success
+                    danger.hide(); //alert danger
+                    root.prev(".js-contact-form-fields-required").hide(); //mandatory message
+
+                    if (result.DownloadFilePath) {
+                        var anchor = $("<a href=\"" + result.DownloadFilePath + "\" target=\"_blank\" style=\"display:none;\">Hidden Link</a>");
+                        $("body").append(anchor);
+                        anchor[0].click();
+                        anchor.remove();
+                    }
+                    window.dataLayer = window.dataLayer || [];
+                    window.dataLayer.push({ 'event': 'FormSubmit' });
+                }
+                else {
+                    if (!useRecaptcha) {
+                        root.on("submit", Form.formSubmit(root));
+                    }
+                    $("button", root).attr("disabled", false);
+                    for (var i = 0; i < validationErrorsByField.length; i++) {
+                        var fieldId = validationErrorsByField[i].Key;
+                        var validationErrors = validationErrorsByField[i].Value;
+
+                        var $field = root.find("#" + fieldId.replace("{", "\\{").replace("}", "\\}"));
+                        if ($field.is("input[type=text],input[type=email],select,textarea,input[type=checkbox]")) {
+                            Form.validateField($field, validationErrors);
+                        }
+                        else if ($field.is(".js-form-field-radio")) {
+                            Form.validateRadioField($field, validationErrors);
+                        }
+                    }
+                }
+            })
+            .fail(function () {
+                if (useRecaptcha && Form.recaptchaLoaded) {
+                    //fa s� che si possa riutilizzare il bottone
+                    grecaptcha.reset();
+                }
+                success.hide();
+                danger.show();
+                root.on("submit", Form.formSubmit);
+                $("button", root).attr("disabled", false);
+            });
+
+    },
+    formSubmit: function (root) {
+        return function () {
+            Form.formSubmitInternal(root, false, "");
+            return false;
+        };
+    },
+    formSubmitRecaptcha: function (root) {
+        return function (token) {
+            Form.formSubmitInternal(root, true, token);
+            return false;
+        };
+    },
+    initAutomaticHiddenFields: function () {
+        var currentPageUrl = window.location.href;
+        var currentPageTitle = $("title").html();
+        var expertName = "";
+        if (ModalContextManager.getCurrentModalContext() && ModalContextManager.getCurrentModalContext().getExpertName()) {
+            expertName = ModalContextManager.getCurrentModalContext().getExpertName();
+        }
+
+        $("input[data-pageUrl]").val(currentPageUrl);
+        $("div[data-pageUrl]").html(currentPageUrl);
+        $("input[data-pageTitle]").val(currentPageTitle);
+        $("div[data-pageTitle]").html(currentPageTitle);
+        $("input[data-experts]").val(expertName);
+        $("div[data-experts]").html(expertName);
+
+
+    }
+};
+
+var Utils = {
+    ApplyQuerystringFilters: function (filters, path) {
+        var dict = {};
+        new URLSearchParams(window.location.search).forEach((val, key) => {
+            dict[key] = dict[key] || [];
+            dict[key].push(val)
+        });
+
+        const filtersDict = {};
+        (filters || []).forEach((f) => {
+            filtersDict[f.rk] = filtersDict[f.rk] || [];
+            if (f.rv == "") return;
+            filtersDict[f.rk].push(f.rv);
+        })
+        
+        console.log('from URL: ', JSON.stringify(dict));
+        console.log('from filters: ', JSON.stringify(filtersDict));
+
+        Object.keys(filtersDict).forEach(filterKey => {
+            dict[filterKey] = filtersDict[filterKey];
+        });
+
+        console.log('final: ', JSON.stringify(Object.assign(dict, filtersDict)));
+
+        var qs = "";
+
+        Object.keys(dict).forEach(urlKey => {
+            dict[urlKey].forEach(value => {
+                if (qs !== "")
+                    qs += "&";
+                qs += urlKey + "=" + encodeURIComponent(value);
+            });
+        });
+        if (path && path.includes("?")) {
+            qs = ("&" + qs);
+        }
+        else {
+            qs = ("?" + qs);
+        }
+        if (path) {
+            window.location.href = path + qs;
+        } else {
+            window.location.search = qs;
+            if (window.location.pathname.includes("/page/")) {
+                window.location.href = window.location.href.split("/page/")[0] + qs;
+            }
+        }
+    }
+};
+
+var SearchFilters = {
+    init: function () {
+        $("form.filters").each(function () {
+            var $form = $(this);
+
+            var applyFilters = function () {
+                var filters = $.map($("select", $form), function (a, index) {
+                    var rk = $(a).attr("data-rk");
+                    var rv = $(a).val();
+                    return {
+                        "rk": rk,
+                        "rv": rv
+                    };
+                });
+
+                if ($(".accordion.tag-filter").length > 0) {
+                    var tags = $(".accordion.tag-filter").attr("data-rv").split(",");
+                    for (var i = 0; i < tags.length; i++) {
+                        var tag = tags[i];
+                        filters.push({
+                            "rk": $(".accordion.tag-filter").attr("data-rk"),
+                            "rv": tag
+                        });
+                    }
+                }
+
+                var dateInput = $("input.date-picker");
+
+                if (dateInput.length) {
+                    var dateRangeVal = dateInput.val();
+                    if (dateRangeVal && dateRangeVal !== "") {
+                        var dateFromVal = ""; var dateToVal = "";
+                        if (dateRangeVal.includes(" to ")) {
+                            var values = dateRangeVal.split(" to ");
+                            dateFromVal = values[0]; dateToVal = values[1];
+                        } else {
+                            dateFromVal = dateRangeVal;
+                            dateToVal = dateRangeVal;
+                        }
+                        var formatDate = function (date) {
+                            var splitDate = date.split("-");
+                            return splitDate[0] + "-" + splitDate[1] + "-" + splitDate[2];
+                            //var splitDateYear = splitDate[2];
+                            //if (splitDateYear.length == 2) {
+                            //    splitDateYear = 1900 + 100 + parseInt(splitDate[2]);
+                            //}
+                            //return splitDateYear.toString() + "-" + splitDate[1] + "-" + splitDate[0];
+                        };
+                        dateFromVal = formatDate(dateFromVal);
+                        dateToVal = formatDate(dateToVal);
+
+                        var dateFromRk = dateInput.attr("data-from-rk");
+                        var dateToRk = dateInput.attr("data-to-rk");
+
+                        filters.push({
+                            "rk": dateFromRk,
+                            "rv": dateFromVal
+                        });
+                        filters.push({
+                            "rk": dateToRk,
+                            "rv": dateToVal
+                        });
+
+                    }
+                }
+
+                if ($("a.js-toggle-filter").length > 0) {
+                    var status = $("a.js-toggle-filter").attr("data-status");
+                    if (status == "on") {
+                        filters.push({
+                            "rk": $("a.js-toggle-filter").attr("data-rk"),
+                            "rv": $("a.js-toggle-filter").attr("data-rv")
+                        });
+                    }
+                }
+
+
+                Utils.ApplyQuerystringFilters(filters);
+            };
+
+            //$("input.date-picker").change(applyFilters);
+            window.datepickerHidden_old = true;
+            var datepicker = function () {
+                var datepickerHidden_new = $(".flatpickr-calendar").css("display") == "none";
+                var $input = $("input.date-picker");
+
+                var datepickerValue_new = $input.val();
+
+                var qsValue = $input.attr("data-from-qs");
+                if (qsValue != $input.attr("data-to-qs"))
+                    qsValue += (" to " + $input.attr("data-to-qs"));
+
+                //console.log("datepickerHidden_old: " + window.datepickerHidden_old + ", datepickerHidden_new: " + datepickerHidden_new + ", qsValue: " + qsValue + ", datepickerValue_new: " + datepickerValue_new);
+                if (!window.datepickerHidden_old && datepickerHidden_new && qsValue != datepickerValue_new) {
+                    applyFilters();
+                }
+                else {
+                    window.datepickerHidden_old = datepickerHidden_new;
+                    setTimeout(datepicker, 500);
+                }
+            };
+            setTimeout(datepicker, 500);
+
+            $("select", $form).change(applyFilters);
+
+            $(".filter-tags a.article-tag, form.filters a.article-tag").click(function () {
+                event.preventDefault();
+                var a = $(this);
+                if (a.hasClass("selected")) {
+                    a.removeClass("selected");
+                    $(".accordion.tag-filter").attr("data-rv", $(".accordion.tag-filter").attr("data-rv").replace(a.data('value'), ""));
+                }
+                else
+                    $(".accordion.tag-filter").attr("data-rv", $(".accordion.tag-filter").attr("data-rv") + "," + a.data('value'));
+                applyFilters();
+            });
+
+            $("a.js-toggle-filter").click(function () {
+                event.preventDefault();
+                var a = $(this);
+                var status = a.attr("data-status");
+                if (status == "on")
+                    a.attr("data-status", "off");
+                else
+                    a.attr("data-status", "on");
+                applyFilters();
+            });
+
+            $("#resetFilterId").click(function () {
+                var urlParamsReset = new URLSearchParams(window.location.search);
+                var href = window.location.href.split("?")[0];
+                urlParamsReset.forEach((value, key) => {
+                    if (key.includes("keyword")) {
+                        href += "?" + key + "=" + value;
+                    }
+                });
+                window.location.href = href;
+            });
+
+            $(".card-body .filtered-tags a.article-tag").click(function () {
+                event.preventDefault();
+                var a = $(this);
+                $(".accordion.tag-filter").attr("data-rv", $(".accordion.tag-filter").attr("data-rv") + "," + a.data('value'));
+                applyFilters();
+            })
+        });
+    }
+};
+
+
+
+var CareersSearchForm = {
+    init: function () {
+        $("form.js-careers-search-form").each(function () {
+            var $form = $(this);
+            $form.submit(function () {
+                event.preventDefault();
+
+                var filters = $.map($("input[type='search'],select", $form), function (a, index) {
+                    var rk = $(a).attr("data-rk");
+                    var rv = $(a).val();
+                    return {
+                        "rk": rk,
+                        "rv": rv
+                    };
+                });
+
+                var hiddenFilters = $("input[type='hidden']", $form);
+                for (var i = 0; i < hiddenFilters.length; i++) {
+                    var a = hiddenFilters[i];
+                    var rk = $(a).attr("data-rk");
+                    var rv = $(a).val();
+
+                    var values = rv.split('|');
+                    for (var j = 0; j < values.length; j++) {
+                        filters.push({
+                            "rk": rk,
+                            "rv": values[j]
+                        });
+                    }
+                }
+
+                Utils.ApplyQuerystringFilters(filters, $form.attr("action"));
+            });
+        });
+    }
+};
+
+var Cookies = {
+    getCookie: function (name) {
+        var value = "; " + document.cookie;
+        var parts = value.split("; " + name + "=");
+        if (parts.length == 2) return parts.pop().split(";").shift();
+    }
+};
+
+var Pardot = {
+    getVisitorId: function (pardotFormPiAId) {
+        var cookie = "";
+        if (pardotFormPiAId !== null) {
+            cookie = Cookies.getCookie("visitor_id" + (pardotFormPiAId - 1000));
+        }
+        if (!cookie) return "";
+
+        return cookie;
+    },
+    getVisitorHash: function (pardotFormPiAId) {
+        var cookie = "";
+        if (pardotFormPiAId !== null) {
+            cookie = Cookies.getCookie("visitor_id" + (pardotFormPiAId - 1000) + "-hash");
+        }
+        if (!cookie) return "";
+
+        return cookie;
+    }
+
+};
+
+var ExternalLinkManager = {
+    isLinkExternal: function (url) {
+        var regex = /^https?:\/\/([^\/]+)(\/.*)?$/;
+        if (!regex.test(url)) return false;
+        var host = regex.exec(url)[1];
+        var currentHost = window.location.host;
+        return host.toLowerCase() != currentHost.toLowerCase();
+    },
+    fixExternalLink: function (link) {
+        link.attr("target", "_blank");
+    },
+    fixExternalLinks: function () {
+        var links = $("a");
+        links.each(function (i, elem) {
+            var link = $(elem);
+            if (ExternalLinkManager.isLinkExternal(link.attr("href"))) {
+                ExternalLinkManager.fixExternalLink(link);
+            }
+        });
+    }
+}
+$(document).ready(ExternalLinkManager.fixExternalLinks);
+
+var PdfLinkManager = {
+    isPdfLink: function (url) {
+        var regex = /^(.*)\.pdf(\?.*)?$/;
+        return regex.test(url);
+    },
+    fixPdfLink: function (link) {
+        link.attr("target", "_blank");
+    },
+    fixPdfLinks: function () {
+        var links = $("a");
+        links.each(function (i, elem) {
+            var link = $(elem);
+            if (PdfLinkManager.isPdfLink(link.attr("href"))) {
+                PdfLinkManager.fixPdfLink(link);
+            }
+        });
+    }
+}
+$(document).ready(PdfLinkManager.fixPdfLinks);
+
+$(function () {
+    $('*:attrStartsWith("data-responsimg")').responsImg();
+    //Form.init();
+    SearchFilters.init();
+    CareersSearchForm.init();
+
+    $("a.job-detail-link").each(function (i, element) {
+        var $element = $(element);
+        $element.on("click", function (event) {
+            event.stopPropagation();
+            myOnClick($element);
+            return false;
+        });
+    });
+
+    //$("*[data-bs-toggle='modal']").each(function () {
+    //    var $button = $(this);
+    //    var dataTarget = $button.attr("data-bs-target");
+    //    if (dataTarget) {
+    //        while (dataTarget.length && dataTarget.charAt(0) === '#') dataTarget = dataTarget.slice(1);
+    //        $button.click(function () {
+    //            $("#" + dataTarget).modal('toggle', $button);
+    //        });
+    //    }
+    //});
+});
+
+//invocata al caricamento dello script di recaptcha
+function onLoadRecaptchaCallback() {
+    Form.recaptchaLoaded = true;
+    Form.init();
+}
+
+function myOnClick(anElement) {
+    var form = '<form id="auto-generated-form" method="post" action="' + anElement.attr('href') + '"><input type="hidden" name="searchPage" value="' + location.href + '"></form>';
+    $("body").append(form);
+    $("#auto-generated-form").submit();
+}
+
+function ModalContext() {
+    var self = this;
+
+    //expert name
+    self.expertName = "";
+    self.getExpertName = function () {
+        return self.expertName;
+    };
+    self.setExpertName = function (expertName) {
+        self.expertName = expertName;
+    };
+
+}
+
+var ModalContextManager = {
+    currentModalContext: null,
+    createNewModalContext: function () {
+        ModalContextManager.currentModalContext = new ModalContext();
+    },
+    disposeModalContext: function () {
+        ModalContextManager.currentModalContext = null;
+    },
+    getCurrentModalContext: function () {
+        return ModalContextManager.currentModalContext;
+    }
+};
+
+$(document).ready(function () {
+
+    $(".modal").each(function (_, modal) {
+        $modal = $(modal);
+
+        $modal.on('show.bs.modal', function (event) {
+            var $button = $(event.relatedTarget);
+            ModalContextManager.createNewModalContext();
+
+            var $expertContainer = $button.parent("[data-expertName]");
+            if ($expertContainer && $expertContainer.length) {
+                ModalContextManager.getCurrentModalContext().setExpertName($expertContainer.attr("data-expertName"));
+            }
+
+            Form.initAutomaticHiddenFields();
+        });
+
+        $modal.on('hide.bs.modal', function () {
+            ModalContextManager.disposeModalContext();
+            Form.initAutomaticHiddenFields();
+        });
+    });
+});
+
+$(document).ready(SearchInput.init);
+
+try {
+    hljs.initHighlightingOnLoad();
+
+}
+catch (error) {
+    console.log("hljs not imported");
+}
+
+const EMEAL = {
+
+    EVENTS: {
+        trackGlobalParam: () => {
+            const self = EMEAL.EVENTS;
+            self.track({ 'global': 'Y' });
+        },
+        trackWebsiteLang: (langCode) => {
+            const self = EMEAL.EVENTS;
+            self.track({ 'website_language': langCode });
+        },
+        trackNavbar: (level, param) => {
+            const self = EMEAL.EVENTS;
+            const arg = self.getNavbarEventParam(level, param);
+            self.track(arg);
+        },
+        getNavbarEventParam: (level, arg) => {
+            if (level < 0) {
+                console.warn('Wrong level ', level);
+                return;
+            }
+            switch (level) {
+                case 0: return { 'content_type': arg }
+                default: return { 'content_sub_category': arg }
+            }
+        },
+        track: (obj) => {
+            window.dataLayer = window.dataLayer || [];
+            //if (window.gtag instanceof Function) { gtag(obj); return; }
+            //console.log(obj);
+            window.dataLayer.push(obj);
+        }
+    }
+
+}
+
+$(document).ready(function () {
+    document.querySelectorAll('.section-agenda').forEach(section => {
+        const buttons = section.querySelectorAll('.section-agenda-tab-control');
+        const tabs = section.querySelectorAll('.section-agenda-tab');
+
+        buttons.forEach(button => {
+            button.addEventListener('click', () => {
+                // Remove 'active' from buttons
+                buttons.forEach(b => b.classList.remove('active'));
+                button.classList.add('active');
+
+                // Hide all tabs by default
+                tabs.forEach(t => t.classList.add('d-none'));
+
+                const targetId = button.getAttribute('data-target');
+
+                // If "All" button clicked, show everything
+                if (!targetId) {
+                    tabs.forEach(t => t.classList.remove('d-none'));
+                } else {
+                    // Show only the matching tab
+                    const targetTab = section.querySelector(`#${targetId}`);
+                    if (targetTab) {
+                        targetTab.classList.remove('d-none');
+                    }
+                }
+            });
+        });
+    });
+});
+;

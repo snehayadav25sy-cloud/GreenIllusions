@@ -1,0 +1,157 @@
+
+document.addEventListener("DOMContentLoaded", function(s) {
+    // Check conditions before proceeding
+    if (window.location.href.indexOf("/insights/") !== -1 && 
+        !document.getElementById("marketplace-cross-link-component") && 
+        document.querySelector(".insight-sidebar-wrapper")) {
+      
+      // Create and append stylesheet link
+      const styleLink = document.createElement('link');
+      styleLink.href = "-/media/4DAA4856F3D746239635F9645513301B";
+      styleLink.type = "text/css";
+      styleLink.rel = "stylesheet";
+      document.head.appendChild(styleLink);
+      
+      // Create the marketplace component
+      const marketplaceComponent = document.createElement('div');
+      marketplaceComponent.className = "component summary no-links";
+      marketplaceComponent.id = "marketplace-cross-link-component";
+      marketplaceComponent.innerHTML = `
+        <div class="component-content">
+          <section class="content-body fis-summary bg-light-gray topactive" style="" id="">
+            <div class="content-width">
+              <h4 class="fis-h4">Products
+                <div class="circles-accent">
+                  <div class="accent"></div>
+                  <div class="accent"></div>
+                  <div class="accent"></div>
+                  <div class="accent"></div>
+                  <div class="accent"></div>
+                </div>
+              </h4>
+              <div class="fis-summary-container">
+                <div class="fis-summary-section fis-summary-section--full">
+                  <h5 class="fis-h5">Solutions</h5>
+                </div>
+                <div class="fis-summary-section fis-summary-section--full">
+                  <h5 class="fis-h5">Product Link</h5>
+                  <span class="fis-body-1 fis-summary-section-list">
+                    <p>Discover financial technology product offerings from FIS.</p>
+                    <a href="/products/product-catalog" class="link">
+                      <div class="arrow-svg-wrap">
+                        <svg class="fis-icon fis-icon-carrot fis-svg-green">
+                          <title>fis-icon-carrot</title>
+                          <use xlink:href="#fis-icon-carrot"></use>
+                        </svg>
+                      </div>
+                    </a>
+                  </span>
+                </div>
+              </div>
+            </div>
+          </section>
+        </div>
+      `;
+      
+      // Insert the component after the sidebar wrapper
+      const sidebarWrapper = document.querySelector(".insight-sidebar-wrapper");
+      if (sidebarWrapper && sidebarWrapper.nextSibling) {
+        sidebarWrapper.parentNode.insertBefore(marketplaceComponent, sidebarWrapper.nextSibling);
+      } else if (sidebarWrapper) {
+        sidebarWrapper.parentNode.appendChild(marketplaceComponent);
+      }
+      
+      // Create and append the circles accent
+      const circlesAccent = document.createElement('div');
+      circlesAccent.className = 'circles-accent';
+      circlesAccent.innerHTML = `
+        <div class="accent"></div>
+        <div class="accent"></div>
+        <div class="accent"></div>
+        <div class="accent"></div>
+        <div class="accent"></div>
+      `;
+      
+      // Append to the h4 element
+      const h4Element = document.querySelector("#marketplace-cross-link-component .fis-summary .fis-h4");
+      if (h4Element) {
+        h4Element.appendChild(circlesAccent);
+      }
+    } else if (window.location.href.indexOf("/insights/") !== -1 && 
+    document.getElementById("marketplace-cross-link-component") && 
+    document.querySelector(".insight-sidebar-wrapper")) {
+
+        // Create and append stylesheet link
+      const styleLink = document.createElement('link');
+      styleLink.href = "-/media/188DE7754FE34732AC0C4FED5712B688?marketplace-card-styles_v2";
+      styleLink.type = "text/css";
+      styleLink.rel = "stylesheet";
+      document.head.appendChild(styleLink);
+
+// Create and append circles-accent div
+const circlesAccent = document.createElement('div');
+circlesAccent.className = 'circles-accent';
+
+// Create and append five accent divs
+for (let i = 0; i < 5; i++) {
+  const accent = document.createElement('div');
+  accent.className = 'accent';
+  circlesAccent.appendChild(accent);
+}
+
+// Append to the target element
+const h4Elements = document.querySelectorAll('#marketplace-cross-link-component .fis-summary .fis-h4');
+const h4Header = document.querySelector('#marketplace-cross-link-component .fis-summary h4.fis-h4');
+h4Elements.forEach(element => {
+  element.appendChild(circlesAccent);
+});
+
+
+if (h4Header) {
+  h4Header.textContent = 'Products';
+}
+
+//const fisSummarySectionLink = document.querySelector('#marketplace-cross-link-component .fis-summary-section.fis-summary-section--full .fis-summary-section-list a.link');
+//const fisSummarySectionLinkP = document.querySelector('#marketplace-cross-link-component .fis-summary-section.fis-summary-section--full .fis-summary-section-list p');
+//if (fisSummarySectionLink){
+    //fisSummarySectionLinkP.textContent = 'See all FIS product offerings';
+    //fisSummarySectionLink.setAttribute('href','/product-catalog');
+//}
+
+// Handle solution links
+let solutionLinks = [];
+const linkElements = document.querySelectorAll('#marketplace-cross-link-component .fis-summary-container .fis-summary-section.fis-summary-section--full:nth-child(2) p.fis-body-1 a');
+
+// Build array of solution links
+linkElements.forEach(link => {
+  const href = link.getAttribute('href');
+  const title = link.getAttribute('title');
+  const html = link.innerHTML;
+  
+  const linkWithSvg = `<a href="${href}" title="${title}">${html}<svg class="fis-icon module-link-arrow-width fis-icon-arrow fis--green">
+    <title></title>
+    <use xlink:href="#fis-icon-arrow"></use>
+  </svg>
+  </a>`;
+  
+  solutionLinks.push(linkWithSvg);
+});
+
+// Clear and repopulate the container
+const container = document.querySelector('#marketplace-cross-link-component .fis-summary-container .fis-summary-section.fis-summary-section--full:nth-child(2) p.fis-body-1');
+if (container) {
+  container.innerHTML = '';
+  
+  // Append each link to the container
+  solutionLinks.forEach(linkHtml => {
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = linkHtml.trim();
+    const linkNode = tempDiv.firstChild;
+    container.appendChild(linkNode);
+  });
+}
+
+
+    }
+
+  });

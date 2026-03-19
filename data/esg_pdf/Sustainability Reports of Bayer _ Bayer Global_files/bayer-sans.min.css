@@ -1,0 +1,97 @@
+@font-face {
+  font-family: "Bayer Sans";
+  font-weight: 100;
+  font-style: normal;
+  src: url("web-typeface/BayerSansWeb-Thin.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Bayer Sans";
+  font-weight: 200;
+  font-style: normal;
+  src: url("web-typeface/BayerSansWeb-ExtraLight.woff2") format("woff2");
+  font-display: swap
+}
+
+@font-face {
+  font-family: "Bayer Sans";
+  font-weight: 200;
+  font-style: italic;
+  src: url("web-typeface/BayerSansWeb-ExtraLightItalic.woff2") format("woff2");
+  font-display: swap
+}
+
+@font-face {
+  font-family: "Bayer Sans";
+  font-weight: 400;
+  font-style: normal;
+  src: url("web-typeface/BayerSansWeb-Light.woff2") format("woff2");
+  font-display: swap
+}
+
+@font-face {
+  font-family: "Bayer Sans";
+  font-weight: 400;
+  font-style: italic;
+  src: url("web-typeface/BayerSansWeb-LightItalic.woff2") format("woff2");
+  font-display: swap
+}
+
+@font-face {
+  font-family: "Bayer Sans";
+  font-weight: 600;
+  font-style: normal;
+  src: url("web-typeface/BayerSansWeb-Regular.woff2") format("woff2");
+  font-display: swap
+}
+
+@font-face {
+  font-family: "Bayer Sans";
+  font-weight: 600;
+  font-style: italic;
+  src: url("web-typeface/BayerSansWeb-Italic.woff2") format("woff2");
+  font-display: swap
+}
+
+@font-face {
+  font-family: "Bayer Sans";
+  font-weight: 500;
+  font-style: normal;
+  src: url("web-typeface/BayerSansWeb-Medium.woff2") format("woff2");
+  font-display: swap
+}
+
+@font-face {
+  font-family: "Bayer Sans";
+  font-weight: 800;
+  font-style: normal;
+  src: url("web-typeface/BayerSansWeb-Bold.woff2") format("woff2");
+  font-display: swap
+}
+
+@font-face {
+  font-family: "Bayer Sans";
+  font-weight: 800;
+  font-style: italic;
+  src: url("web-typeface/BayerSansWeb-BoldItalic.woff2") format("woff2");
+  font-display: swap
+}
+
+body,
+p,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+strong,
+b,
+ul,
+li,
+ol,
+figcaption,
+div,
+span {
+  font-family: "Bayer Sans", Arial, Roboto, sans-serif;
+}

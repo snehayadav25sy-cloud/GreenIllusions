@@ -1,0 +1,302 @@
+const productToasterMarkup = '<div class="component Toaster-Popup-Component">\n' +
+                        '<div class="component-content">\n' +
+                            '<div class="fis-toaster-wrapper fis-bg-white">\n' +
+                                '<div class="toaster-nav fis-bg-white">\n' +
+                                    '<div class="toaster-copy">\n' +
+                                        '<p class="field-collapsedtitle">Book a meeting</p>\n' +
+                                        '<i>\n' +
+                                            '<svg class="fis-icon fis-zoom-svg fis-svg-green">\n' +
+                                                '<use xlink:href="#fis-zoom-svg"></use>\n' +
+                                            '</svg>\n' +
+                                        '</i>\n' +
+                                    '</div>\n' +
+                                '</div>\n' +
+                                '<div class="close-btn">\n' +
+                                    '<svg class="fis-icon fis-close-svg">\n' +
+                                        '<use xlink:href="#fis-close-svg"></use>\n' +
+                                    '</svg>\n' +
+                                '</div>\n' +
+
+                                '<div class="toaster-copy-inner">\n' +
+                                    '<div class="img">\n' +
+                                        '<img src="/-/media/B13A552C8B9B47A1BBDFABEFF82892EC.ashx" alt="Woman working on a laptop">\n' +
+                                    '</div>\n' +
+                                    '<div class="content">\n' +
+                                        '<div class="toaster-title">Speak with a specialist</div>\n' +
+                                        '<p>Schedule an appointment with a dedicated specialist who can evaluate your business needs and develop a tailored plan to align with your objectives.</p>\n' +
+                                        '<a target="" class="toaster-cta btn-primary-green-on-dark" href="/solutions-contact?param=products/digital-one&amp;cta=toaster">Get in touch\n' +
+                                            '<svg class="fis-icon fis-icon-arrow fis-svg-green">\n' +
+                                                '<title></title>\n' +
+                                                '<use xlink:href="#fis-icon-arrow"></use>\n' +
+                                            '</svg>\n' +
+                                        '</a>\n' +
+                                    '</div>\n' +
+                                '</div>\n' +
+                            '</div>\n' +
+                        '</div>\n' +
+                    '</div>';
+
+const insightToasterMarkup = '<div class="component Toaster-Popup-Component">\n' +
+                    '<div class="component-content">\n' +
+                        '<div class="fis-toaster-wrapper fis-bg-white">\n' +
+                            '<div class="toaster-nav fis-bg-white">\n' +
+                                '<div class="toaster-copy">\n' +
+                                    '<p class="field-collapsedtitle">Report</p>\n' +
+                                    '<i>\n' +
+                                        '<svg class="fis-icon fis-zoom-svg fis-svg-green">\n' +
+                                            '<use xlink:href="#fis-zoom-svg"></use>\n' +
+                                        '</svg>\n' +
+                                    '</i>\n' +
+                                '</div>\n' +
+                            '</div>\n' +
+                            '<div class="close-btn">\n' +
+                                '<svg class="fis-icon fis-close-svg">\n' +
+                                    '<use xlink:href="#fis-close-svg"></use>\n' +
+                                '</svg>\n' +
+                            '</div>\n' +
+
+                            '<div class="toaster-copy-inner">\n' +
+                                '<div class="img">\n' +
+                                    '<img src="/-/media/14769AFDF7B84F379C57DC675AB75812.ashx" alt="Circular cropped image of a calm ocean on top of a stormy ocean">\n' +
+                                '</div>\n' +
+                                '<div class="content">\n' +
+                                    '<div class="toaster-title">Finding the financial upside in uncertainty</div>\n' +
+                                    '<p>Unlock strategies to help ease tensions and transform financial imbalance into opportunity in The Harmony Gap report.</p>\n' +
+                                    '<a target="" class="toaster-cta btn-primary-green-on-dark" href="/the-harmony-gap#Home">Learn more\n' +
+                                        '<svg class="fis-icon fis-icon-arrow fis-svg-green">\n' +
+                                            '<title></title>\n' +
+                                            '<use xlink:href="#fis-icon-arrow"></use>\n' +
+                                        '</svg>\n' +
+                                    '</a>\n' +
+                                '</div>\n' +
+                            '</div>\n' +
+                        '</div>\n' +
+                    '</div>\n' +
+                '</div>';                    
+
+// Function to add CSS file to head
+function addStylesheet(href) {
+  // Check if the stylesheet is already added
+  const existingLink = document.querySelector(`link[href="${href}"]`);
+  if (existingLink) {
+    //console.log('Stylesheet already exists:', href);
+    return; // Already exists, no need to add it again
+  }
+  
+  // Create link element
+  const link = document.createElement('link');
+  link.rel = 'stylesheet';
+  link.type = 'text/css';
+  link.href = href;
+  
+  // Append to the head
+  document.head.appendChild(link);
+  //console.log('Added stylesheet:', href);
+}
+
+
+  
+  
+
+  function buildToaster() {
+    addStylesheet('/~/-/media/BDF6EA42B4064838B64355F1D1BCB58D.ashx');
+    
+    // Create toaster container
+    const toasterContainer = document.createElement('div');
+    
+    // Insert the toaster markup
+
+
+if (window.location.pathname.includes('/products/')) {
+    toasterContainer.innerHTML = productToasterMarkup;
+} else if (window.location.pathname.includes('/insights/')) {
+    toasterContainer.innerHTML = insightToasterMarkup;
+}
+    // Find the link element that needs to be updated
+    const link = toasterContainer.querySelector('.toaster-copy-inner a');
+    if (link) {
+      // Get the current page path without domain
+      let pagePath = window.location.pathname;
+      
+      // Remove leading slash if it exists
+      if (pagePath.startsWith('/')) {
+        pagePath = pagePath.substring(1);
+      }
+      
+      // Create the dynamic parameter
+      const dynamicParam = '?param=' + pagePath + '&cta=toaster';
+      
+      // Get the base URL from the existing href
+      const hrefBase = link.getAttribute('href').split('?')[0];
+      
+      if (window.location.pathname.includes('/products/')) {
+      // Update the href with the new parameters
+      link.setAttribute('href', hrefBase + dynamicParam);
+
+      } else {
+        link.setAttribute('href', hrefBase);
+      }
+      
+      //console.log('Updated link with dynamic parameter:', dynamicParam);
+    }
+    
+    // Append to main element instead of body
+    const mainElement = document.querySelector('main');
+    if (mainElement) {
+      mainElement.appendChild(toasterContainer);
+    } else {
+      // Fallback to body if main not found
+      document.body.appendChild(toasterContainer);
+    }
+  }
+
+  function toasterFunctions() {
+    // Trigger click on toaster-nav after 10ms
+    setTimeout(function() {
+      // Simulate click on toaster-nav
+      const toasterNav = document.querySelector('.toaster-nav');
+      if (toasterNav) {
+        // Create and dispatch a click event
+        const clickEvent = new Event('click');
+        toasterNav.dispatchEvent(clickEvent);
+      }
+    }, 100);
+  
+    // Add click event listener to toaster-nav elements
+    const toasterNavElements = document.querySelectorAll('.toaster-nav');
+    toasterNavElements.forEach(function(element) {
+      element.addEventListener('click', function() {
+        // Toggle classes
+        document.querySelector('.fis-toaster-wrapper').classList.toggle('show');
+        this.classList.toggle('active');
+      });
+    });
+  
+    // Add click event listener to close button
+    const closeButtons = document.querySelectorAll('.close-btn');
+    closeButtons.forEach(function(button) {
+      button.addEventListener('click', function(e) {
+        // Remove classes
+        document.querySelector('.fis-toaster-wrapper').classList.remove('show');
+        document.querySelector('.toaster-nav').classList.remove('active');
+        
+        // Stop event propagation
+        e.stopPropagation();
+      });
+    });
+  }
+ 
+  
+  document.addEventListener('DOMContentLoaded', function() {
+    // Function to check page path and add toaster if needed
+    function checkPathAndAddToaster() {
+      // 1. Check if the page path contains '/products/'
+      if (window.location.pathname.includes('/products/')) {
+        
+        // 2. Check if toaster component already exists
+        const existingToaster = document.querySelector('.Toaster-Popup-Component');
+        
+        // 3. If it doesn't exist, add it
+        if (!existingToaster) {
+          //console.log('Adding toaster to products page...');
+          
+          // Find the main element
+          const mainElement = document.querySelector('main');
+          
+          if (mainElement) {
+            // Build and add the toaster with dynamic path parameters
+            buildToaster();
+            
+            // Set up the toaster functionality
+            toasterFunctions();
+            
+            //console.log('Toaster added successfully');
+          } else {
+            //console.error('Main element not found');
+          }
+        } else {
+          // 4. Exit if toaster already exists
+          //console.log('Toaster already exists, no action taken');
+        }
+      } else if (window.location.pathname.includes('/insights/')) {
+        // 2. Check if toaster component already exists
+        const existingToaster = document.querySelector('.Toaster-Popup-Component');
+        
+        // 3. If it doesn't exist, add it
+        if (!existingToaster) {
+          //console.log('Adding toaster to products page...');
+          
+          // Find the main element
+          const mainElement = document.querySelector('main');
+          
+          if (mainElement) {
+            // Build and add the toaster with dynamic path parameters
+            buildToaster();
+            
+            // Set up the toaster functionality
+            toasterFunctions();
+            
+            //console.log('Toaster added successfully');
+          } else {
+            //console.error('Main element not found');
+          }
+        } else {
+          // 4. Exit if toaster already exists
+          //console.log('Toaster already exists, no action taken');
+        }
+      } else {
+//console.log('Not a products page, toaster not added');
+      }
+    }
+    
+    // Execute the check
+    checkPathAndAddToaster();
+  });
+  
+/* Toaster Hide Local Storage */
+(function () {
+  const VISIT_KEY = "site_has_visited";
+
+  function hasVisited() {
+    try { return localStorage.getItem(VISIT_KEY) === "true"; } catch { return false; }
+  }
+  function markVisited() {
+    try { localStorage.setItem(VISIT_KEY, "true"); } catch {}
+  }
+
+  function applyState() {
+    const wrapper = document.querySelector(".fis-toaster-wrapper");
+    const nav = document.querySelector(".toaster-nav");
+    const closeBtn = document.querySelector(".close-btn");
+    if (!wrapper) return;
+
+    const firstVisit = !hasVisited();
+
+    if (firstVisit) {
+      wrapper.classList.add("show");
+      if (nav) nav.classList.add("active");
+      if (closeBtn) {
+        closeBtn.addEventListener("click", function () {
+          wrapper.classList.remove("show");
+          if (nav) nav.classList.remove("active");
+          markVisited();
+        }, { once: true });
+      } else {
+        setTimeout(markVisited, 1200);
+      }
+    } else {
+      wrapper.classList.remove("show");
+      if (nav) nav.classList.remove("active");
+    }
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", applyState);
+  } else {
+    applyState();
+  }
+
+  const observer = new MutationObserver(() => applyState());
+  observer.observe(document.documentElement, { childList: true, subtree: true });
+})();
+/* Toaster Hide Local Storage */

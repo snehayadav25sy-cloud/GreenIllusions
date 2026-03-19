@@ -1,0 +1,1 @@
+!function(c){"use strict";c(document).ready((function(){c(".paragraph--type--accordion .card-header .accordion-title").on("keydown",(function(i){if(13===i.which){var n=c(this).find("div");n.length>0?n.click():c(this).click()}}))}))}(jQuery);

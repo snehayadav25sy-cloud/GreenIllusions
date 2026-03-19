@@ -1,0 +1,14 @@
+streamlit
+numpy
+pandas
+pymupdf        
+pdfminer.six   
+beautifulsoup4 
+requests       
+faiss-cpu      
+scikit-learn   
+tqdm          
+python-dotenv  
+fastapi 
+uvicorn
+boto3

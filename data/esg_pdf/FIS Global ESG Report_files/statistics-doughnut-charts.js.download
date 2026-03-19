@@ -1,0 +1,348 @@
+"use strict";
+/*Initiate AOS Library*/
+var options = {
+  startEvent: 'cloneDOMContentLoaded',
+  mirror: false,
+  throttleDelay: 0
+}
+AOS.init(options);
+document.addEventListener("DOMContentLoaded", function(event) {
+var theWindowWidth = $(window).width(); 
+  /*Add AOS Attributes to common elements*/
+  $('.l2hero .content-width').attr('data-aos-duration', '1500');
+  $('.l2hero .content-width').attr('data-aos', 'fade-up');
+
+  $('.l2herochild .stat-card').each(function(){
+    $(this).attr('data-aos-duration', '1500');
+    $(this).attr('data-aos', 'fade-up');
+    $(this).attr('data-aos-delay', '500');
+  });
+
+  $('h2.fis-primary-heading-regular-font').each(function(){
+    $(this).attr('data-aos', 'fade-up');
+    $(this).attr('data-aos-duration', '1000');
+  });
+
+  $('.hero-child-intro').attr('data-aos', 'fade-up').attr('data-aos-duration', '1000');
+  $('.l2herochild a.connectsales').attr('data-aos', 'fade-up').attr('data-aos-duration', '1000');  
+
+  /*END Add AOS Attributes to common elements*/
+  var cloneDOMContentLoaded = new Event("cloneDOMContentLoaded");
+  document.dispatchEvent(cloneDOMContentLoaded);
+  AOS.refreshHard();
+});
+/*END Initiate AOS Library*/
+
+var windowWidthCirc;
+$(document).ready(function () {
+  (function () {
+    if ($("#counters_1").length >= 1) {
+      var visibilityIds = [
+        "counters_1",
+        "counters_2",
+        "counters_3",
+        "counters_hero",
+      ]; //must be an array, could have only one element
+      var counterClass = ".counter-value";
+      var defaultSpeed = 3000; //default value
+      var doCount = function doCount(
+        num,
+        index,
+        speed,
+        groupClass,
+        direction,
+        easing
+      ) {
+        var className = counterClass + "." + "c_" + index;
+        if (num !== undefined) {
+          if (easing == undefined) easing = "swing";
+          $(className).animate(
+            {
+              num: num,
+            },
+            {
+              duration: +speed,
+              easing: easing,
+              step: function (now) {
+                if (direction == "reverse") {
+                  $(this).text(num - Math.floor(now));
+                } else {
+                  $(this).text(Math.floor(now));
+                }
+              },
+              complete: doCount,
+            }
+          );
+        }
+      };
+      var counter_init = function counter_init(groupId) {
+        var num;
+        var speed;
+        var direction;
+        var index = 0;
+        var easing;
+        $(counterClass).each(function () {
+          num = $(this).attr("data-TargetNum");
+          speed = $(this).attr("data-Speed");
+          direction = $(this).attr("data-Direction");
+          easing = $(this).attr("data-Easing");
+          if (speed == undefined) speed = defaultSpeed;
+          $(this).addClass("c_" + index); //add a class to recognize each counter
+          //console.log('c_' + index);
+          doCount(num, index, speed, groupId, direction, easing);
+          index++;
+        });
+      };
+      var getVisibilityStatus = function getVisibilityStatus() {
+        var top_of_element;
+        var bottom_of_element;
+        var bottom_of_screen;
+        var top_of_screen;
+        $.each(visibilityIds, function (item, index) {
+          if ($("#" + index).length >= 1) {
+            //elValFromTop[index] = Math.ceil($(item).offset().top);
+            top_of_element = $("#" + index).offset().top;
+            bottom_of_element =
+              $("#" + index).offset().top + $("#" + index).outerHeight();
+            bottom_of_screen = $(window).scrollTop() + $(window).innerHeight();
+            top_of_screen = $(window).scrollTop();
+            if (
+              bottom_of_screen > top_of_element &&
+              top_of_screen < bottom_of_element
+            ) {
+              counter_init(item);
+            }
+          } else {
+            return;
+          }
+        });
+      };
+      $(window).on("scroll", function () {
+        getVisibilityStatus();
+      });
+      getVisibilityStatus();
+    }
+  })();
+
+/********************** Doughnut Chart *********************/
+(function(){
+  if($('.chart-container').length >= 1){
+  function isInViewport(el) {
+      const rect = el.getBoundingClientRect();
+      return (
+          rect.top >= 0 &&
+          rect.left >= 0 &&
+          rect.bottom <= (window.innerHeight || document.documentElement.clientHeight) &&
+          rect.right <= (window.innerWidth || document.documentElement.clientWidth)
+      );
+  }
+
+  const box = document.querySelector('.chart-container');
+  document.addEventListener('scroll', function () {
+    var achart = 100;
+    var bchart = 100;
+    var cchart = 100;
+    if(isInViewport(box)) {
+        let doughnutchart1 = document.querySelector('path.doughnutchart1');
+        $(".doughnutchart1").addClass("circleanimate");
+        if (doughnutchart1) {
+          var xpre = $('.doughnutChart1Per').text();
+          var xchart = parseFloat(xpre.match(/[\d\.]+/));
+          var achart = (100 - xchart);
+          doughnutchart1.setAttribute('stroke-dashoffset', achart);
+        }
+
+        let doughnutchart2 = document.querySelector('path.doughnutchart2');
+        $(".doughnutchart2").addClass("circleanimate");
+        if (doughnutchart2) {
+          var ypre = $('.doughnutChart2Per').text();
+          var ychart = parseFloat(ypre.match(/[\d\.]+/));
+          var bchart = (100 - ychart);
+          doughnutchart2.setAttribute('stroke-dashoffset', bchart);
+        }
+
+        let doughnutchart3 = document.querySelector('path.doughnutchart3');
+        $(".doughnutchart3").addClass("circleanimate");
+        if (doughnutchart3) {
+          var zpre = $('.doughnutChart3Per').text();
+          var zchart = parseFloat(zpre.match(/[\d\.]+/));
+          var cchart = (100 - zchart);
+          doughnutchart3.setAttribute('stroke-dashoffset', cchart);
+        }
+    }
+  });
+  }
+})();
+
+$.fn.isInViewport = function() {
+  var elementTop = $(this).offset().top;
+  var elementBottom = elementTop + $(this).outerHeight();
+  var viewportTop = $(window).scrollTop();
+  var viewportBottom = viewportTop + $(window).height();
+  return elementBottom > viewportTop && elementTop < viewportBottom;
+};
+
+windowWidthCirc = $(window).width();
+  var circleProgress;
+  var emptyFill;
+  var counterClass = ".counter-value";
+  var defaultSpeed = 3000; //default value
+  var dataThick;
+  var dataThickReduced;
+  var gradient1;
+  var gradient2;
+  var circleSize;
+  var duration;
+  var doCount = function doCount(
+      num,
+      index,
+      speed,
+      groupClass,
+      direction,
+      easing
+    ) {
+      var className = counterClass + "." + "c_" + index;
+      if (num !== undefined) {
+        if (easing == undefined) easing = "swing";
+          $(className).animate(
+              {
+                num: num,
+              },
+              {
+                duration: +speed,
+                easing: easing,
+                step: function (now) {
+                  if (direction == "reverse") {
+                    if($(this).attr('data-has-commas') === 'true'){
+                      $(this).text(numberWithCommas(num - Math.floor(now)));
+                    } else {
+                      $(this).text(num - Math.floor(now));
+                    }
+                  } else {
+                    if($(this).attr('data-has-commas') === 'true'){
+                      
+                      $(this).text(numberWithCommas(Math.floor(now)));
+                    
+                    } else if ($(this).attr('data-is-decimal') === 'true') {
+                    
+                      var size = $(this).text().split(".")[1] ? $(this).text().split(".")[1].length : 0;
+                        //$(this).text(Math.round(now*100)/100);
+                        $(this).text(parseFloat(decimalSeparateNumber(now)).toFixed(size));
+                    } else {
+                      $(this).text(Math.floor(now));
+                    }
+                  }
+                },
+                complete: doCount,
+              }
+            );
+        }
+    };
+
+    var counter_init = function counter_init(groupId) {
+      var num;
+      var speed;
+      var direction;
+      var index = 0;
+      var easing;
+      
+      $('.row.stat-detail.triggered .counter-value').each(function () {
+        num = $(this).attr("data-count");
+        speed = $(this).attr("data-Speed");
+        direction = $(this).attr("data-Direction");
+        easing = $(this).attr("data-Easing");
+        if (speed == undefined) speed = defaultSpeed;
+        $(this).addClass("c_" + index); 
+        doCount(num, index, speed, groupId, direction, easing);
+        index++;
+      });
+    };
+    //Adds commas formatting to numbers over four digits in length
+    function numberWithCommas(number) {
+        var parts = number.toString().split(".");
+        parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+        return parts.join(".");
+    }
+    //Add decimals formatting
+    function decimalSeparateNumber(number){
+      number = Math.round(number * 100) / 100;
+      while (/(\d+)(\d{3})/.test(number.toString())){
+      number = number.toString().replace(/(\d)(?=(\d\d\d)+(?!\d))/g, "$1.");
+     }
+     return number;
+   }
+   var thisCircle;
+   function checkDoughnut () {
+    if(thisCircle.closest('.row.stat-detail').hasClass('not-triggered')){
+      thisCircle.closest('.row.stat-detail').removeClass('not-triggered').addClass('triggered');
+      dataThick = thisCircle.data('thickness');
+      if (windowWidthCirc <= 991){
+          dataThickReduced = dataThick * .75;
+    } else if (windowWidthCirc <= 1200){
+      dataThickReduced = dataThick * .62;
+    } else {
+          dataThickReduced = dataThick;
+    }
+    thisCircle.data('thickness', dataThickReduced);
+    circleProgress = thisCircle.data('progress') * .01;
+    emptyFill = thisCircle.data('emptyfill');
+    gradient1 = thisCircle.attr('data-gradient1');
+    gradient2 = thisCircle.attr('data-gradient2');
+    circleSize = thisCircle.outerHeight() * 2;
+    duration = thisCircle.data('duration');
+      thisCircle.circleProgress({
+         value: circleProgress,
+         size: circleSize,
+
+         animation: {
+             duration: duration,
+             easing: 'circleProgressEasing'
+         },
+         fill: {
+          //gradient: ["#50FF48", "#285BC5"]
+          gradient: [[gradient2, .1], [gradient1, 1]], gradientAngle: Math.PI / 1.9
+        },
+        emptyFill: 'rgba(' + emptyFill + ')'
+     }).on('circle-animation-progress', function (event, progress) {
+     });
+
+     counter_init();
+    }
+   }
+
+   $('.second.circle').each(function(){
+    thisCircle = $(this);
+    if (thisCircle.isInViewport()){
+      checkDoughnut();
+    }
+  });
+
+var thisStat;
+  $('.row.no-doughnuts .stat-container .stat-detail').each(function(){
+    thisStat = $(this);
+    if (thisStat.isInViewport()){
+      if(thisStat.hasClass('not-triggered')){
+        thisStat.addClass('triggered').removeClass('not-triggered');
+        counter_init();
+      }
+    }
+  });
+    $(window).scroll(function(){
+      $('.second.circle').each(function(){
+        thisCircle = $(this);
+        if (thisCircle.isInViewport()){
+          checkDoughnut();
+        }
+    });
+
+    $('.row.no-doughnuts .stat-container .stat-detail').each(function(){
+      thisStat = $(this);
+      if (thisStat.isInViewport()){
+        if(thisStat.hasClass('not-triggered')){
+          thisStat.addClass('triggered').removeClass('not-triggered');
+          counter_init();
+        }
+      }
+    });
+  });
+});

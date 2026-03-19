@@ -1,0 +1,55 @@
+/**
+ * @file bayer_links_alter.js
+ *
+ * Changes links to no tracking based on user cookie acceptance.
+ */
+
+(function ($, Drupal, drupalSettings) {
+  'use strict';
+  $(document).ready(function () {
+    setTimeout(function() {
+      // Replace URL with non tracking URL if cookie is not accepted.
+      if ('undefined' !== typeof OnetrustActiveGroups) {
+        $("body").find("[data-no-tracking-url]").each(function (index) {
+          var trackingURL = $(this).attr('href');
+          // Handle iframe.
+          if ($(this).is('iframe')) {
+            var trackingURL = $(this).attr('src');
+          }
+          $(this).attr('data-tracking-url', trackingURL);
+          if (OnetrustActiveGroups.indexOf('C0002') !== -1) {
+            var trackingURL = $(this).attr('data-tracking-url');
+            $(this).attr('href', trackingURL);
+            if ($(this).is('iframe')) {
+              $(this).attr('src', trackingURL);
+            }
+          }
+          else {
+            var noTrackingURL = $(this).attr('data-no-tracking-url');
+            if (noTrackingURL) {
+              $(this).attr('href', noTrackingURL);
+              if ($(this).is('iframe')) {
+                $(this).attr('src', noTrackingURL);
+              }
+            }
+          }
+        });
+      }
+      else {
+        $("body").find("[data-no-tracking-url]").each(function (index) {
+          var trackingURL = $(this).attr('href');
+          $(this).attr('data-tracking-url', trackingURL);
+          var noTrackingURL = $(this).attr('data-no-tracking-url');
+          if (noTrackingURL) {
+            $(this).attr('href', noTrackingURL);
+            if ($(this).is('iframe')) {
+              $(this).attr('src', noTrackingURL);
+            }
+          }
+        });
+      }
+    },400);
+
+  });
+
+})(jQuery, Drupal, drupalSettings);

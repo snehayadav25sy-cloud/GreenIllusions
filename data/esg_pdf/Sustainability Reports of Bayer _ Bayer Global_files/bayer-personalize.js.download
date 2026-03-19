@@ -1,0 +1,115 @@
+/**
+ * @file bayer_personalize.js
+ *
+ * Defines the behavior of the bayer personalize.
+ */
+
+var langCode, cookieName, countryCode, siteCode;
+
+function getSuggestions(countryCode) {
+  if (countryCode !== null) {
+    countryCode = countryCode.split(":");
+    countryCode = countryCode[0].toUpperCase();
+  } else {
+    return false;
+  }
+
+  // Suggetion text not showing when site and country code is same.
+  if (countryCode == siteCode) {
+    return false;
+  }
+
+  var href = '/' + langCode + '/suggestions';
+  var html = jQuery.ajax({
+    url: href,
+    type: "POST",
+    data: {
+      "ajaxCall": true
+    },
+    async: true,
+    success: function (data) {
+      if (data[countryCode]) {
+        if (OnetrustActiveGroups.indexOf('C0002') !== -1) {
+
+          // Dynamically create div for Desktop & Mobile.
+          if (jQuery('.personalize-suggestion .content').length == 0) {
+            jQuery('<div />').appendTo('.personalize-suggestion').attr('class', 'content');
+          }
+
+          if (data[countryCode].content) {
+            suggestionContent = data[countryCode].content;
+            jQuery('.personalize-suggestion .content').html(suggestionContent);
+          }
+        }
+      }
+    }
+  });
+}
+
+(function ($, Drupal, drupalSettings) {
+  'use strict';
+
+  var suggestionContent, countryCode, suggestionContent, siteName, isEnableSuggestion;
+  Drupal.behaviors.bayer_personalize_behavior = {
+
+    attach: function (context, settings) {
+      if ('undefined' !== typeof drupalSettings.bayer_geolocation) {
+        var cookieDetails = drupalSettings.bayer_geolocation.cookie_details;
+        cookieName = cookieDetails['cookie_name'];
+      }
+      langCode = drupalSettings.path.currentLanguage;
+      siteCode = isEnableSuggestion = '';
+
+      if (drupalSettings.bayer_personalize) {
+        if (typeof drupalSettings.bayer_personalize.country_code !== "undefined" && drupalSettings.bayer_personalize.country_code !== null) {
+          siteCode = drupalSettings.bayer_personalize.country_code;
+          siteCode = siteCode.toUpperCase();
+        }
+
+        if (typeof drupalSettings.bayer_personalize.is_enable_suggestion !== "undefined" && drupalSettings.bayer_personalize.is_enable_suggestion !== null) {
+          isEnableSuggestion = drupalSettings.bayer_personalize.is_enable_suggestion;
+        }
+      }
+
+      $(".meta-locations").click(function (e) {
+
+        // return False if suggestion is disabled.
+        if ((isEnableSuggestion === null) || (isEnableSuggestion == 0)) {
+          return false;
+        }
+        if ('undefined' !== typeof OnetrustActiveGroups) {
+          if (OnetrustActiveGroups.indexOf('C0002') !== -1) {
+            countryCode = getCookie(cookieName);
+            if (countryCode === undefined || countryCode === null || countryCode == '') {
+              getGeolocationDetails(true);
+            } else {
+              getSuggestions(countryCode);
+            }
+          } else {
+            // Cookie is not accepted.
+            return false;
+          }
+        }
+
+      });
+
+      function getCookie(cname) {
+        let name = cname + "=";
+        let decodedCookie = decodeURIComponent(document.cookie);
+        let availableCookies = decodedCookie.split(';');
+        for (let i = 0; i < availableCookies.length; i++) {
+          let currentCookie = availableCookies[i];
+          while (currentCookie.charAt(0) == ' ') {
+            currentCookie = currentCookie.substring(1);
+          }
+          if (currentCookie.indexOf(name) == 0) {
+            return currentCookie.substring(name.length, currentCookie.length);
+          }
+        }
+        return "";
+      }
+
+    }
+  }
+
+})(jQuery, Drupal, drupalSettings);

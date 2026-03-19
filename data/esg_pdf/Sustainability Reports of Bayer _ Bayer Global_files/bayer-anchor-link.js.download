@@ -1,0 +1,224 @@
+(function ($, Drupal, drupalSettings) {
+  var width = $(window).width();
+  var tablet = 991;
+  var mobile_sm = 640;
+
+  $(document).ready(function () {
+    var anchor_links = document.getElementsByClassName("anchor-link");
+    if ($("#toolbar-administration") && ($(anchor_links).length > 0)) {
+      let nav_tool_bar = $(".moderation-sidebar-toolbar-tab");
+      let toolBarDiv = document.createElement('div');
+      $(toolBarDiv).addClass("toolbar-tab anchor-link-button");
+      let anchor_activate_button = $("<span class='toggle-anchor-link'>" + Drupal.t('Anchor Link') + "</span>");
+      toolBarDiv.appendChild(anchor_activate_button[0]);
+      nav_tool_bar.prepend(toolBarDiv);
+      $('.toggle-anchor-link').on("click", function () {
+        let copy_anchor_link_button = document.getElementsByClassName("copy-anchor-link");
+        if (copy_anchor_link_button.length == 0) {
+          appendAnchorLinks();
+        } else {
+          $(".copy-anchor-link").toggle();
+        }
+        $('.copy-anchor-link').on('click', function (e) {
+          e.preventDefault();
+          copyAnchorUrl($(this));
+        });
+      });
+    }
+
+    // Add paragraph UUID to its parent as per CM/CD.
+    $('div[data-anchor-link-pid], a[data-anchor-link-pid]').each(function() {
+      var paragraphUUID = $(this).attr('data-anchor-link-pid');
+      $(this).parent().attr('id', paragraphUUID);
+    });
+
+    $('.paragraph--type--cta-button').on('click', function () {
+      ctaUrl($(this));
+    });
+
+    // Scroll to component on click.
+    $('.paragraph--type--tab-with-fact-box a').click(function () {
+      getIdFromUrl($(this));
+    });
+    $('.paragraph--type--accordion-with-fact-box a').click(function () {
+      getIdFromUrl($(this));
+    });
+    $('.paragraph--type--text-with-image a, .paragraph--type--info-box a, .paragraph--type--text-with-image-fact-box a').click(function () {
+      getIdFromUrl($(this));
+    });
+    $('.paragraph--type--html-editor-fact-box a').click(function () {
+      getIdFromUrl($(this));
+    });
+    $('.paragraph--type--grid-layout a').click(function () {
+      getIdFromUrl($(this));
+    });
+    $('.paragraph--type--link-list a').click(function () {
+      getIdFromUrl($(this));
+    });
+
+    function appendAnchorLinks() {
+      $(anchor_links).each(function (e) {
+        let elem = this;
+        let createDiv = document.createElement('div');
+        let anchor_button = $("<a href ='#' class = 'copy-anchor-link cta'>" + Drupal.t('Copy Anchor Link') + "</a>");
+        createDiv.appendChild(anchor_button[0]);
+        if (($(elem).hasClass("paragraph--type--accordion-item")) && ($(elem).find('.copy-anchor-link').length == 0)) {
+          $(elem).find(".collapse")[0].appendChild(createDiv);
+        } else if (($(elem).hasClass("tab-pane")) && ($(elem).find('.copy-anchor-link').length == 0)) {
+          if (width < 768) {
+            $(elem).find(".collapse")[0].appendChild(createDiv);
+          } else {
+            elem.appendChild(createDiv);
+          }
+        } else if (($(elem).parents(".paragraph--type--tab").length == 0) && ($(elem).parents(".paragraph--type--accordion-item").length == 0) && ($(elem).find('.copy-anchor-link').length == 0)) {
+          elem.appendChild(createDiv);
+        }
+      });
+  
+      // To unset the anchor link buttons in each video playlist item.
+      $('.paragraph--type--video-playlist-item').each(function() {
+        $(this).find(".copy-anchor-link").remove();
+      });
+    }  
+  });
+
+  // Scroll to component if id is present in URL.
+  window.onload = () => {
+    setTimeout(function () {
+      if ($(location).prop('hash').substr(1)) {
+        hasUrlFragement($(location).prop('hash').substr(1));
+      }
+    }, 300);
+  };
+
+  function copyAnchorUrl($clicked_Anchor) {
+    let anchor_url;
+    let elem = $clicked_Anchor.closest(".anchor-link");
+    if (elem) {
+      anchor_url = elem[0].getAttribute("data-anchor-link");
+    }
+    var $temp = $("<input>");
+    $("body").append($temp);
+    $temp.val(anchor_url).select();
+    document.execCommand("copy");
+    $temp.remove();
+  }
+
+  function hasUrlFragement(hash) {
+    let elem;
+    elem = document.getElementById(hash);
+    if (elem) {
+      if ($(elem).hasClass("paragraph--type--accordion-item")) {
+        $(elem).find(".collapse").addClass("show");
+        $(elem).find(".card-header a").removeClass("collapsed");
+        let search_key = elem.getAttribute("id");
+        scrollTo(search_key);
+      } else if ($(elem).hasClass("nav-link") || $(elem).children().hasClass("nav-link")) {
+        var search_key_tab = elem.getAttribute("id");
+        if (search_key_tab.length > 12) {
+          var search_key_tab = $(elem).children("a").attr("id");
+          elem = $(elem).children();
+        }
+        let tab_obj = search_key_tab.split('-')[1];
+        let content_key = "pane-" + tab_obj;
+        let content = document.getElementById(content_key);
+        $(elem).parents(".paragraph--type--tab").find(".tab-header .nav-item a").removeClass("active");
+        $(elem).parents(".paragraph--type--tab").find(".tab-content .tab-pane").removeClass("show active");
+        $(elem).parents(".paragraph--type--tab").find(".tab-content .tab-pane").find(".collapse").removeClass("show");
+        $(elem).parents(".paragraph--type--tab").find(".tab-content .tab-pane").find(".card-header a").addClass("collapsed");
+        $(content).addClass("active show");
+        $(elem).addClass("active");
+        if (width < 768) {
+          $(content).find(".collapse").addClass("show");
+          $(content).find(".card-header a").removeClass("collapsed");
+        }
+        scrollTo(content_key);
+      } else if (($(elem).hasClass("paragraph--type--media")) && ($(elem).parents(".field--name-field-media-items").length)) {
+          let search_key = elem.getAttribute("id");
+          $(elem).parents(".carousel-inner").find(".active").removeClass("active");
+          $(elem).parents(".field--name-field-media-items").addClass("active");
+          let pre_element = $("#" + search_key).parent().attr("id");
+          let count = parseInt(pre_element.replace(/[^0-9.]/g, ""));
+          let enclosing_element = $(elem).parents(".carousel").find(".carousel-indicators");
+          $(enclosing_element).find(".active").removeClass("active");
+          $(enclosing_element).find("li:nth-child("+count+")").addClass("active");
+          scrollTo(search_key);
+      } else {
+        if (hash) {
+          scrollTo(hash);
+        }
+      }
+    }
+  }
+
+  function ctaUrl($clicked_Ctabutton) {
+    let key;
+    let elem = $clicked_Ctabutton.find("a");
+    key = elem[0].getAttribute("href").split("#")[1];
+    elem = document.getElementById(key);
+    if ($(elem).hasClass("paragraph--type--accordion-item")) {
+      $(elem).find(".collapse").addClass("show");
+      $(elem).find(".card-header a").removeClass("collapsed");
+      let search_key = elem.getAttribute("id");
+      scrollTo(search_key);
+    } else if ($(elem).hasClass("nav-link")) {
+      let search_key = elem.getAttribute("id");
+      let tab_obj = search_key.split('-')[1];
+      let content_key = "pane-" + tab_obj;
+      let content = document.getElementById(content_key);
+      $(elem).parents(".paragraph--type--tab").find(".tab-header .nav-item a").removeClass("active");
+      $(elem).parents(".paragraph--type--tab").find(".tab-content .tab-pane").removeClass("show active");
+      $(elem).parents(".paragraph--type--tab").find(".tab-content .tab-pane").find(".collapse").removeClass("show");
+      $(elem).parents(".paragraph--type--tab").find(".tab-content .tab-pane").find(".card-header a").addClass("collapsed");
+      $(content).addClass("active show");
+      $(elem).addClass("active");
+      if (width < 768) {
+        $(content).find(".collapse").addClass("show");
+        $(content).find(".card-header a").removeClass("collapsed");
+      }
+      scrollTo(content_key);
+    } else {
+      if (key) {
+        scrollTo(key);
+      }
+    }
+  }
+
+  function scrollTo(id) {
+    if (width > tablet) {
+      if ($("#" + id).parent(".tab-content").length) {
+        $('html,body').animate({
+          scrollTop: $("#" + id).parents(".paragraph--type--tab").offset().top - 160
+        },'slow');
+      } else {
+        $('html,body').animate({
+          scrollTop: $("#" + id).offset().top - 160
+        },'slow');
+      }
+    } else if (width <= tablet && width > mobile_sm) {
+        if ($("#" + id).parent(".tab-content").length) {
+          $('html,body').animate({
+            scrollTop: $("#" + id).parents(".paragraph--type--tab").offset().top - 100
+          },'slow');
+        } else {
+          $('html,body').animate({
+            scrollTop: $("#" + id).offset().top - 100
+          },'slow');
+        }
+    } else {
+      $('html,body').animate({
+        scrollTop: $("#" + id).offset().top - 100
+      },'slow');
+    }
+  }
+
+  function getIdFromUrl(object) {
+    let hash = object.prop('hash').substr(1);
+    if (hash) {
+      hasUrlFragement(hash);
+    } else {
+      return '';
+    }
+  }
+
+})(jQuery, Drupal, drupalSettings);

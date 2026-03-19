@@ -1,0 +1,114 @@
+/**
+ * @file geolocation.js
+ *
+ * Defines the behavior of the bayer geolocation.
+ */
+
+var cookieName, cookieCountryName, cookieDuration, cookieDetails, cookieCountry;
+
+function getGeolocationDetails(isSuggestions) {
+  jQuery.ajax({
+    url: Drupal.url('get-geolocation'),
+    type: "POST",
+    dataType: "json",
+    async: false,
+    success: function(response) {
+      if (Object.keys(response).length) {
+        if (response.country_code !== null) {
+          var country_code = (response.region_iso_code === null) ? response.country_code : [response.country_code, response.region_iso_code].join(':');
+          var cookieCountry = response.country;
+
+          // Set cookie.
+          setCookie(cookieName, country_code, cookieDuration);
+          setCookie(cookieCountryName, cookieCountry, cookieDuration);
+          if (isSuggestions === true) {
+            getSuggestions(response.country_code);
+          }
+
+          // For auto select country in forms based on geoip.
+          if (cookieCountry) {
+            jQuery('.job-search-form #location').val(cookieCountry).change();
+          }
+          var country_option = jQuery('.webform-submission-form .form-item-country #edit-country option[value^=' + response.country_code + ']').val();
+          if (country_option == null) {
+            var country_option = jQuery('.webform-submission-form .form-item-your-country #edit-your-country option[value^=' + response.country_code + ']').val();
+          }
+          if (country_option) {
+            var country_split = country_option.split("-");
+            jQuery('.webform-submission-form .form-item-country #edit-country, .webform-submission-form .form-item-your-country #edit-your-country').val(country_option).change();
+          }
+          jQuery('.paragraph--type--contact-worldwide .countries-container .countries-dropdown').find("[data-country-code='" + response.country_code + "']").data( "value" );
+          jQuery('.paragraph--type--contact-worldwide .countries-container .countries-dropdown .countries-button .countries-display').text(jQuery('.paragraph--type--contact-worldwide .countries-container .countries-dropdown').find("[data-country-code='" + response.country_code + "']").data("value"));
+          jQuery('.paragraph--type--contact-worldwide .countries-container .countries-dropdown').find("[data-country-code='" + response.country_code + "']").addClass("highlighted");
+          jQuery('.paragraph--type--contact-worldwide .addresses-container .addresses-list').find("[data-country-code='" + response.country_code + "']").removeClass('hidden').addClass("visible");
+
+        }
+      }
+    },
+    fail : function () {
+      jQuery('.ajax-progress').remove();
+    }
+  })
+}
+
+function setCookie(cname, cvalue, exdays) {
+  const d = new Date();
+  d.setTime(d.getTime() + (exdays * 24 * 60 * 60 * 1000));
+  let expires = 'expires=' + d.toUTCString();
+  document.cookie = cname + '=' + cvalue + ';' + expires + ';path=/';
+}
+
+function getCookie(name) {
+  var match = document.cookie.match(RegExp('(?:^|;\\s*)' + name + '=([^;]*)'));
+  return match ? match[1] : null;
+}
+
+(function ($, Drupal, drupalSettings) {
+  'use strict';
+
+  Drupal.behaviors.bayerGeolocation = {
+    attach: function (context) {
+      if('undefined' !== typeof drupalSettings.bayer_geolocation) {
+        cookieDetails = drupalSettings.bayer_geolocation.cookie_details;
+        cookieName = cookieDetails['cookie_name'];
+        cookieDuration = cookieDetails['cookie_duration'];
+        cookieCountryName = cookieDetails['country_code'];
+      }
+    }
+  }
+
+  $(document).ready(function () {
+    var isCookie = getCookie(cookieName);
+    if (isCookie !== null) {
+        var idCountry = isCookie.split(":");
+        var country_option = $('.webform-submission-form .form-item-country #edit-country option[value^=' + idCountry[0] + ']').val();
+        if (country_option == null) {
+          var country_option = $('.webform-submission-form .form-item-your-country #edit-your-country option[value^=' + idCountry[0] + ']').val();
+        }
+        if (country_option) {
+          var country_split = country_option.split("-");
+          $('.webform-submission-form .form-item-country #edit-country, .webform-submission-form .form-item-your-country #edit-your-country').val(country_option).change();
+        }
+        cookieCountry = getCookie(cookieCountryName);
+        if (cookieCountry === null) {
+          getGeolocationDetails(false);
+        }
+        if (cookieCountry) {
+          $('.job-search-form #location').val(cookieCountry).change();
+        }
+        $('.paragraph--type--contact-worldwide .countries-container .countries-dropdown').find("[data-country-code='" + idCountry[0] + "']").data( "value" );
+        $('.paragraph--type--contact-worldwide .countries-container .countries-dropdown .countries-button .countries-display').text( $('.paragraph--type--contact-worldwide .countries-container .countries-dropdown').find("[data-country-code='" + idCountry[0] + "']").data( "value" )  );
+        $('.paragraph--type--contact-worldwide .countries-container .countries-dropdown').find("[data-country-code='" + idCountry[0] + "']").addClass("highlighted");
+        $('.paragraph--type--contact-worldwide .addresses-container .addresses-list').find("[data-country-code='" + idCountry[0] + "']").removeClass('hidden').addClass("visible");
+    }
+    if ('undefined' !== typeof OnetrustActiveGroups) {
+      if (OnetrustActiveGroups.indexOf('C0002') !== -1) {
+        var isCookie = getCookie(cookieName);
+        if (isCookie === null) {
+          getGeolocationDetails(false);
+        }
+      }
+    }
+  });
+
+})(jQuery, Drupal, drupalSettings);

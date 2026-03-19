@@ -1,0 +1,845 @@
+document.addEventListener('DOMContentLoaded', () => {
+  const path = window.location.pathname;
+  
+  // Configuration objects
+  const CSS_URLS = {
+    localNav: '/-/media/07DF79EE09ED49288AC991A10A73C312',
+    support1: '/-/media/76009133F7864D7BA8AD65F5C83303BE',
+    support2: '-/media/D1984B313DB640808CE0B4CA75D52660',
+    supportScript: '/-/media/54494D27B46A4AD198B59F370B02500F',
+    categoryDropdown: '-/media/6DB31B6A319243BDBDE509DC2A3AC747'
+  };
+
+  const NAV_CONFIG = {
+    products: {
+      excludedPaths: ['/products', '/products/product-catalog'],
+      navItem: 1,
+      navClass: 'product-page'
+    },
+    insights: {
+      excludedPaths: ['/insights', '/insights/all-topics', '/insights/fis-client-stories'],
+      navItem: 2,
+      navClass: 'insights-nav'
+    },
+    aboutUs: {
+      excludedPaths: [
+        '/about-us',
+        '/about-us/media-room/press-release',
+        '/about-us/media-room/press-release/',
+        '/about-us/media-room/media-kit',
+        '/about-us/media-room/contact',
+        '/about-us/supplier-information-portal/become-supplier',
+        '/about-us/supplier-information-portal/sustainable-procurement'
+      ],
+      navItem: 4,
+      navClass: 'about-subpage-nav'
+    }
+  };
+
+  // Utility functions
+  const injectCSS = (url) => {
+    const link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = url;
+    link.type = 'text/css';
+    document.head.appendChild(link);
+  };
+
+  const injectStyle = (selector, navItems) => {
+    const style = document.createElement('style');
+    const items = navItems.map(n => `${selector} .menu-item:nth-of-type(${n}) a`).join(', ');
+    style.textContent = `${items} {color: #4bcd3e !important;}`;
+    document.head.appendChild(style);
+  };
+
+  const fadeInLocalNav = () => {
+    const localNav = document.querySelector('.component.local-nav');
+    if (!localNav) return;
+    
+    let opacity = 0;
+    const fadeIn = () => {
+      opacity += 0.5;
+      if (opacity < 1) {
+        localNav.style.opacity = opacity;
+        requestAnimationFrame(fadeIn);
+      } else {
+        localNav.style.opacity = 1;
+      }
+    };
+    fadeIn();
+  };
+
+  const waitForElement = (selector, callback, maxAttempts = 25) => {
+    let attempts = 0;
+    const interval = setInterval(() => {
+      const element = document.querySelector(selector);
+      if (element) {
+        clearInterval(interval);
+        callback(element);
+      } else if (++attempts >= maxAttempts) {
+        clearInterval(interval);
+        console.warn(`${selector} not found after waiting.`);
+      }
+    }, 200);
+  };
+
+  const getTextContent = (selector) => {
+    const element = document.querySelector(selector);
+    if (!element) return '';
+    
+    return Array.from(element.childNodes)
+      .filter(node => node.nodeType === Node.TEXT_NODE)
+      .map(node => node.textContent.trim())
+      .join(' ')
+      .trim();
+  };
+
+  const createNavPanel = (homeLink = '/products') => `
+    <div class="nav-panel">
+      <svg width="0" height="0">
+        <defs>
+          <clipPath id="navClip" clipPathUnits="objectBoundingBox">
+            <polygon points="0 0, 0.9 0, 1 0.5, 0.9 1, 0 1"></polygon>
+          </clipPath>
+        </defs>
+      </svg>
+      <div class="nav-content">
+        <span class="home-icon">
+          ${homeLink !== '#' ? `<a href="${homeLink}" class="overlay-link"></a>` : ''}
+          <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 28 28" fill="none">
+            <path d="M14 0.907127L28 12.1555H24.6739V27.0929H15.7235V17.4168H12.2765V27.0929H3.44708V12.1555H0L14 0.907127ZM22.7084 25.1577V10.4017L14 3.38661L5.41253 10.4017V25.1577H10.5529V15.6933H17.4471V25.1577H22.7084Z" fill="black"></path>
+          </svg>
+        </span>`;
+
+  const createBreadcrumbs = (tiers) => {
+    let html = '<div class="breadcrumb-links-wrapper">';
+    const tierNames = ['one', 'two', 'three'];
+    
+    tiers.forEach((tier, index) => {
+      if (tier) {
+        html += `
+          <div class="tier-${tierNames[index]}-wrapper">
+            <a href="${tier.href}"${tier.disabled ? ' style="pointer-events:none;"' : ''}>${tier.text}</a>
+          </div>`;
+      }
+    });
+    
+    html += '</div></div></div>';
+    return html;
+  };
+
+  const createLocalNav = (config) => {
+    const {
+      homeLink = '/products',
+      tiers = [],
+      title = '',
+      showContactUs = false,
+      wrapperClass = '',
+      localNavClass = ''
+    } = config;
+
+    const navPanel = createNavPanel(homeLink);
+    const breadcrumbs = createBreadcrumbs(tiers);
+    
+    return `
+      <div class="component local-nav ${localNavClass}" style="opacity:0;">
+        <div class="component-content">
+          <section class="fis-localnav-wrapper ${wrapperClass} fis-bg-white" id="">
+            <div class="fis-localnav-container">
+              ${navPanel}
+              ${breadcrumbs}
+              ${title ? `
+                <ul class="fis-localnav-prodname">
+                  <li class="l3productname fis-text-black">${title}</li>
+                </ul>` : ''}
+              ${showContactUs ? `
+                <ul class="fis-localnav-right">
+                  <li>
+                    <a href="/contact-us" class="fis-text-black" target="">
+                      Contact us
+                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="12" viewBox="0 0 14 12" fill="none">
+  <path d="M8.39633 0.396484L14 6.00016L8.39633 11.6038L7.45932 10.6852L11.5013 6.6432H0V5.33874H11.5013L7.45932 1.31512L8.39633 0.396484Z" fill="#4BCD3E"/>
+</svg>
+                    </a>
+                  </li>
+                </ul>` : ''}
+            </div>
+          </section>
+          <style>
+            .fis-localnav-wrapper ul.fis-localnav-left .scLooseFrameZone{display:inline-block}
+            .fis-localnav-wrapper ul.fis-localnav-right .scLooseFrameZone{display:inline-block;margin-right:20px}
+          </style>
+        </div>
+      </div>`;
+  };
+
+  const injectLocalNav = (markup, additionalClasses = [], heroClasses = []) => {
+    const target = document.querySelector('#content > .row');
+    if (!target) return;
+    
+    target.insertAdjacentHTML('afterbegin', markup);
+    
+    waitForElement('.component.local-nav', (localNav) => {
+      // Add additional classes to various elements
+      additionalClasses.forEach(({ selector, classes }) => {
+        const element = document.querySelector(selector);
+        if (element) {
+          classes.forEach(cls => element.classList.add(cls));
+        }
+      });
+      
+      // Add hero classes
+      const hero = document.querySelector('.component.hero .hero') || 
+                   document.querySelector('.hero.hero-marketplace-bg .hero-inner .hero-copy');
+      if (hero && heroClasses.length > 0) {
+        heroClasses.forEach(cls => hero.classList.add(cls));
+      }
+      
+      // Load support script and fade in
+      const script = document.createElement('script');
+      script.src = CSS_URLS.supportScript;
+      script.onload = () => console.log('localnav-support-script.js loaded and executed.');
+      script.onerror = () => console.error('Failed to load localnav-support-script.js.');
+      document.head.appendChild(script);
+      
+      fadeInLocalNav();
+    });
+  };
+
+  // Main navigation logic
+  const handleProductsSection = () => {
+    injectStyle('.fis-main-nav.toggleHeader .nav-container .primary-nav', [1]);
+    injectStyle('.nav-container .primary-nav', [1]);
+    injectCSS(CSS_URLS.localNav);
+    
+    if (path === '/products') {
+      const markup = createLocalNav({
+        tiers: [{href: '/products', text: 'Overview', disabled: true}],
+        wrapperClass: 'products-overview'
+      });
+      
+      waitForElement('.fis-localnav-wrapper .fis-localnav-container', (navWrapper) => {
+        navWrapper.insertAdjacentHTML('afterbegin', markup.match(/<div class="nav-panel">[\s\S]*?<\/div>\s*<\/div>/)[0]);
+        navWrapper.closest('.fis-localnav-wrapper').classList.add('products-overview');
+      });
+    } else if (path === '/products/product-catalog') {
+      const markup = createLocalNav({
+        tiers: [{href: '/products', text: 'Overview'}],
+        wrapperClass: 'product-catalog'
+      });
+      
+      waitForElement('.fis-localnav-wrapper .fis-localnav-container', (navWrapper) => {
+        navWrapper.insertAdjacentHTML('afterbegin', markup.match(/<div class="nav-panel">[\s\S]*?<\/div>\s*<\/div>/)[0]);
+        navWrapper.closest('.fis-localnav-wrapper').classList.add('product-catalog');
+      });
+    } else {
+      // Product detail pages
+      const productMarkup = createNavPanel() + createBreadcrumbs([
+        {href: '/products', text: 'Overview'},
+        {href: '/products/product-catalog', text: 'All products'}
+      ]);
+      
+      waitForElement('.fis-localnav-wrapper .fis-localnav-container', (navWrapper) => {
+        navWrapper.insertAdjacentHTML('afterbegin', productMarkup);
+        const wrapper = navWrapper.closest('.fis-localnav-wrapper');
+        wrapper.classList.add('product-page');
+        
+        const toggleSwitch = document.querySelector('.sticky-nav-toggle-switch');
+        if (toggleSwitch) {
+          wrapper.classList.add('product-suite-custom');
+          document.querySelector('.component.local-nav')?.classList.add('product-suite-local-nav');
+        } else {
+                const container = document.querySelector('.fis-localnav-container');                
+const navPanel = container.querySelector('.nav-panel');
+const prodName = container.querySelector('ul.fis-localnav-prodname');
+const leftNav = container.querySelector('ul.fis-localnav-left');
+
+// Create the wrapper div
+const wrapper = document.createElement('div');
+wrapper.classList.add('left-nav-wrap');
+
+// Append the selected elements to the wrapper
+if (navPanel) wrapper.appendChild(navPanel);
+if (prodName) wrapper.appendChild(prodName);
+if (leftNav) wrapper.appendChild(leftNav);
+
+// Insert the wrapper into the container
+container.insertBefore(wrapper, container.firstChild);
+
+        }
+      });
+    }
+  };
+
+  const handleDeveloper = () => {
+        injectStyle('.fis-main-nav.toggleHeader .nav-container .primary-nav', [3]);
+        injectStyle('.nav-container .primary-nav', [3]);
+  }
+
+  const handleInsightsSection = () => {
+    [CSS_URLS.localNav, CSS_URLS.support1, CSS_URLS.support2, CSS_URLS.categoryDropdown].forEach(injectCSS);
+    injectStyle('.fis-main-nav.toggleHeader .nav-container .primary-nav', [1, 2]);
+    
+    waitForElement('.fis-main-nav', (nav) => nav.classList.add('insights-nav'));
+    
+    let config;
+
+    const featuredTopics =  [
+      {urlName: "Risk management", url: "/insights/risk-management"},
+      {urlName: "Customer experience", url: "/insights/customer-experience"},
+      {urlName: "AI and machine learning", url: "/insights/ai"}
+    ];
+
+    const allInsightCategories = [
+  //{ urlName: "AI and machine learning", url: "/insights/ai"},
+  { urlName: "Automation", url: "/insights/automation"},
+  { urlName: "Cloud and aaS platforms", url: "/insights/cloud-and-aas-platforms"},
+  //{ urlName: "Customer experience", url: "/insights/customer-experience" },
+  { urlName: "Cybersecurity", url: "/insights/cybersecurity"},
+  { urlName: "Data management and analytics", url: "/insights/data-management"},
+  //{ urlName: "Digital assets", url: "/insights/digital-assets"},
+  { urlName: "Digitalization", url: "/insights/digitalization"},
+  { urlName: "Embedded finance", url: "/insights/embedded-finance"},
+  //{ urlName: "ESG", url: "/insights/esg"},
+  { urlName: "Fintech Insights series", url: "/insights/fintech-insights"},
+  { urlName: "Fraud", url: "/insights/fraud"},
+  { urlName: "Leadership and work", url: "/insights/leadership-and-work"},
+  { urlName: "Lending", url: "/insights/lending"},
+  { urlName: "Money movement", url: "/insights/money-movement"},
+  //{ urlName: "Operations", url: "/insights/operations"},
+  { urlName: "Payments", url: "/insights/payments"},
+  //{ urlName: "Platforms", url: "/insights/platforms"},
+  { urlName: "Regulatory compliance", url: "/insights/regulatory-change"},
+  //{ urlName: "Risk management", url: "/insights/risk-management" }
+  //{ urlName: "All topics", url: "/insights/all-topics"}
+];
+
+const contentTypes =  [
+  {urlName: "Client stories", url: "/insights/fis-client-stories"},
+];
+
+const categoryDropdown = document.createElement('ul');
+categoryDropdown.className = 'fis-localnav-right insights-dropdown';
+
+const mainLi = document.createElement('li');
+
+const mainLink = document.createElement('a');
+mainLink.className = 'fis-text-black';
+mainLink.innerHTML = `All topics <svg xmlns="http://www.w3.org/2000/svg" width="7" height="5" viewBox="0 0 7 5" fill="none">
+  <path d="M4.11859 4.01299C3.75568 4.2987 3.24432 4.2987 2.88141 4.01299L1.00502 2.53571C0.259231 1.94856 0.674424 0.75 1.62361 0.75L5.37639 0.75C6.32557 0.75 6.74077 1.94856 5.99498 2.53571L4.11859 4.01299Z" fill="#4BCD3E"/>
+</svg>`;
+
+const dropdownDiv = document.createElement('div');
+dropdownDiv.className = 'all-categories-dropdown';
+
+const featDropdownDiv = document.createElement('div');
+featDropdownDiv.className = 'feat-topics-dropdown';
+
+const contentTypeHead = document.createElement('h3');
+contentTypeHead.textContent = 'By content type';
+
+const heading = document.createElement('h3');
+heading.textContent = 'By topic';
+
+const featHeading = document.createElement('h3');
+featHeading.textContent = 'Featured topics';
+
+const dynamicContact = document.createElement('div');
+dynamicContact.className = 'dynamic-contact-us';
+dynamicContact.innerHTML = `<a href="/contact-us">Contact us <svg xmlns="http://www.w3.org/2000/svg" width="14" height="12" viewBox="0 0 14 12" fill="none">
+  <path d="M8.39633 0.396484L14 6.00016L8.39633 11.6038L7.45932 10.6852L11.5013 6.6432H0V5.33874H11.5013L7.45932 1.31512L8.39633 0.396484Z" fill="#4BCD3E"></path>
+</svg></a>`;
+
+
+const list = document.createElement('ul');
+list.className = 'all-categories-list';
+
+const featList = document.createElement('ul');
+featList.className = 'featured-categories-list';
+
+const typeList = document.createElement('ul');
+typeList.className = 'content-type-list';
+
+const browseAll = document.createElement('div');
+browseAll.className = 'browse-all';
+
+const browseAllLink = document.createElement('a');
+browseAllLink.className = 'fis-text-black';
+browseAllLink.href = '/insights/all-topics';
+browseAllLink.innerHTML = `Browse all insights <svg xmlns="http://www.w3.org/2000/svg" width="14" height="12" viewBox="0 0 14 12" fill="none">
+  <path d="M8.39633 0.396484L14 6.00016L8.39633 11.6038L7.45932 10.6852L11.5013 6.6432H0V5.33874H11.5013L7.45932 1.31512L8.39633 0.396484Z" fill="#4BCD3E"/>
+</svg>`;
+
+browseAll.appendChild(browseAllLink);
+
+allInsightCategories.forEach(category => {
+  const li = document.createElement('li');
+  const a = document.createElement('a');
+  a.href = category.url;
+  a.textContent = category.urlName;
+  li.appendChild(a);
+  list.appendChild(li);
+});
+
+featuredTopics.forEach(topic => {
+  const featLi = document.createElement('li');
+  const featA = document.createElement('a');
+  const spanText = document.createElement('span');
+  spanText.className = 'text-wrap';
+  featA.href = topic.url;
+  spanText.textContent = topic.urlName;
+  featA.appendChild(spanText);
+  featLi.appendChild(featA);
+  featList.appendChild(featLi);
+});
+
+contentTypes.forEach(type => {
+  const typeLi = document.createElement('li');
+  const typeA = document.createElement('a');
+  typeA.href = type.url;
+  typeA.textContent = type.urlName;
+  typeLi.appendChild(typeA);
+  typeList.appendChild(typeLi);
+});
+
+
+featDropdownDiv.appendChild(featHeading);
+featDropdownDiv.appendChild(featList);
+dropdownDiv.appendChild(featDropdownDiv);
+dropdownDiv.appendChild(heading);
+dropdownDiv.appendChild(list);
+dropdownDiv.appendChild(contentTypeHead);
+dropdownDiv.appendChild(typeList);
+dropdownDiv.appendChild(browseAll);
+mainLi.appendChild(mainLink);
+
+mainLi.appendChild(dropdownDiv);
+categoryDropdown.appendChild(mainLi);
+
+
+
+    if (path === '/insights') {
+      config = {
+        homeLink: '#',
+        tiers: [{href: '/insights', text: 'Overview', disabled: true}],
+        wrapperClass: 'insights-overview',
+        navClass: 'insights-nav'
+      };
+      const insightsMainHeroTarget = document.querySelector('.component.hero');
+      if (insightsMainHeroTarget){
+        insightsMainHeroTarget.classList.add('pad-insights-hero');
+      }
+    } else if (path === '/insights/all-topics') {
+      config = {
+        homeLink: '/insights',
+        tiers: [{href: '/insights', text: 'Overview'}],
+        title: 'All insights',
+        wrapperClass: 'insights-all-topics',
+        navClass: 'insights-nav'
+      };
+    } 
+    
+    // else if (path === '/insights/fis-client-stories') {
+    //   config = {
+    //     homeLink: '/insights',
+    //     tiers: [{href: '/insights', text: 'Overview'}],
+    //     title: 'Client stories',
+    //     showContactUs: true,
+    //     wrapperClass: 'insights-all-topics'
+    //   };
+      
+    //   waitForElement('.fis-localnav-wrapper', (localNavWrapper) => localNavWrapper.classList.add('client-story-local-nav'));
+    //   waitForElement('.fis-main-nav', (nav) => nav.classList.add('client-stories-nav'));
+    // } 
+    
+    else if (path.includes('/insights/fis-client-stories/') || path === ('/insights/client-stories')) {
+      const title = getTextContent('.hero .hero-inner .hero-copy h1') || 
+                    getTextContent('.hero .hero-inner .hero-copy h2') || 
+                    'Client story';
+      
+      config = {
+        homeLink: '/insights',
+        tiers: [
+          {href: '/insights', text: 'Overview'},
+          {href: '/insights/fis-client-stories', text: 'Client stories'}
+        ],
+        title,
+        showContactUs: true,
+        wrapperClass: 'insights-article client-story-article'
+      };
+      waitForElement('.fis-localnav-wrapper', (localNavWrapper) => localNavWrapper.classList.add('client-story-local-nav'));
+      waitForElement('.fis-main-nav', (nav) => nav.classList.add('client-story-nav'));
+    } else {
+      // Regular insights article
+      let title = getTextContent('.hero-copy h1') || getTextContent('.hero-copy h1 strong') || 'Article';
+      if (title.length > 70) {
+        title = title.slice(0, 67) + '...';
+      }
+
+      config = {
+        homeLink: '/insights',
+        tiers: [
+          {href: '/insights', text: 'Overview'},
+          {href: '/insights/all-topics', text: 'All insights'}
+        ],
+        title,
+        wrapperClass: 'insights-article'
+      };
+    }
+    
+    const markup = createLocalNav(config);
+    const heroClasses = path === '/insights' || path === '/insights/all-topics' ? ['pad-insights-hero'] : [];
+    
+    injectLocalNav(markup, [
+      {selector: '.hero.hero-marketplace-bg .hero-inner .hero-copy', classes: ['pad-for-article']},
+      {selector: '#cs-2col-layout .row .col-md-1', classes: ['pad-for-article']}
+    ], heroClasses);
+
+    const fisLocalNav = document.querySelector('.fis-localnav-wrapper');
+    //if (!path.includes('/insights/fis-client-stories')){
+      fisLocalNav.appendChild(categoryDropdown); // Or append to a specific element
+      fisLocalNav.appendChild(dynamicContact);
+    //}
+
+
+  };
+
+  const handleAboutSection = () => {
+    injectStyle('.fis-main-nav.toggleHeader .nav-container .primary-nav', [1, 4]);
+    [CSS_URLS.localNav, CSS_URLS.support1, CSS_URLS.support2].forEach(injectCSS);
+    
+    if (path === '/about-us') {
+      const markup = createNavPanel('#') + createBreadcrumbs([
+        {href: '/about-us', text: 'Overview', disabled: true}
+      ]);
+      
+      waitForElement('.fis-localnav-wrapper .fis-localnav-container', (navWrapper) => {
+        navWrapper.insertAdjacentHTML('afterbegin', markup);
+        navWrapper.closest('.fis-localnav-wrapper').classList.add('about-overview');
+        document.querySelector('.fis-main-nav').classList.add('about-main-page');
+      });
+      return;
+    }
+    
+    waitForElement('.fis-main-nav', (nav) => nav.classList.add('about-subpage-nav'));
+    
+    // Define page configurations
+    const pageConfigs = {
+      '/leadership': {title: 'Leadership'},
+      '/awards': {title: 'Awards', heroClasses: ['pad-for-local-nav']},
+      '/company-history': {title: 'Company history', additionalClasses: [{selector: '#fis-overview-section', classes: ['pad-for-local-nav']}]},
+      '/global-community-involvement': {title: 'Global community involvement', additionalClasses: [{selector: '.l3Hero.hero.fis-community-hero-wrapper', classes: ['pad-for-local-nav']}]},
+      '/ethics': {title: 'Ethics office', heroClasses: ['pad-for-local-nav']},
+      '/supplier-information-portal': {title: 'Supplier Information Portal', heroClasses: ['pad-for-local-nav']},
+      '/media-room': {title: 'Media room', heroClasses: ['pad-for-local-nav', 'media-room-margin-top']},
+      '/media-kit': {
+        title: 'Media resources',
+        tiers: [
+          {href: '/about-us', text: 'Overview'},
+          {href: '/about-us/media-room', text: 'Media room'}
+        ],
+        heroClasses: ['pad-for-local-nav', 'media-room-margin-top']
+      },
+      '/press-release': {
+        title: 'Press releases',
+        tiers: [
+          {href: '/about-us', text: 'Overview'},
+          {href: '/about-us/media-room', text: 'Media room'}
+        ],
+        heroClasses: ['pad-for-local-nav', 'media-room-margin-top']
+      },
+      '/contact': {
+        title: 'Contact',
+        tiers: [
+          {href: '/about-us', text: 'Overview'},
+          {href: '/about-us/media-room', text: 'Media room'}
+        ],
+        heroClasses: ['pad-for-local-nav', 'media-room-margin-top']
+      },
+      '/become-supplier': {
+        title: 'Become a supplier',
+        tiers: [
+          {href: '/about-us', text: 'Overview'},
+          {href: '/about-us/supplier-information-portal', text: 'Supplier Information Portal'}
+        ],
+        heroClasses: ['pad-for-local-nav']
+      },
+      '/sustainable-procurement': {
+        title: 'Sustainable procurement',
+        tiers: [
+          {href: '/about-us', text: 'Overview'},
+          {href: '/about-us/supplier-information-portal', text: 'Supplier Information Portal'}
+        ],
+        heroClasses: ['pad-for-local-nav']
+      }
+    };
+    
+    // Handle press release detail pages
+    if (path.includes('/media-room/press-release/') && !path.endsWith('/press-release')) {
+      let title = getTextContent('.hero-copy h1') || 'Press release';
+      if (title.length > 70) {
+        title = title.slice(0, 67) + '...';
+      }
+      
+      const config = {
+        homeLink: '/about-us',
+        tiers: [
+          {href: '/about-us', text: 'Overview'},
+          {href: '/about-us/media-room', text: 'Media room'},
+          {href: '/about-us/media-room/press-release', text: 'Press releases'}
+        ],
+        title,
+        showContactUs: true,
+        wrapperClass: 'about-child-page',
+        localNavClass: 'about-child-local three-tier'
+      };
+      
+      const markup = createLocalNav(config);
+      injectLocalNav(markup, [], ['pad-for-local-nav', 'media-room-margin-top']);
+      return;
+    }
+    
+    // Find matching config
+    const matchingPath = Object.keys(pageConfigs).find(key => path.endsWith(key));
+    if (matchingPath) {
+      const pageConfig = pageConfigs[matchingPath];
+      const config = {
+        homeLink: '/about-us',
+        tiers: pageConfig.tiers || [{href: '/about-us', text: 'Overview'}],
+        title: pageConfig.title,
+        showContactUs: true,
+        wrapperClass: 'about-child-page',
+        localNavClass: 'about-child-local'
+      };
+      
+      const markup = createLocalNav(config);
+      injectLocalNav(markup, pageConfig.additionalClasses || [], pageConfig.heroClasses || []);
+    }
+  };
+
+  // Special page handling
+  const specialPages = [
+    //'/global-sustainability',
+    '/blog',
+    '/wealth-partners',
+    '/fisinnovatein48',
+    '/fisinnovatein48-partner-edition',
+    '/fis-fintech-accelerator',
+    '/minority-banking-mdi-cdfi',
+    '/about-us/fis-events'
+  ];
+
+  let config;
+  
+  if (specialPages.some(page => path.endsWith(page))) {
+    
+        const matchedSpecialPage = specialPages.find(page => path.endsWith(page));
+
+        if (matchedSpecialPage) {
+                console.log('Matched special page:', matchedSpecialPage); // Optional: for debugging
+                injectStyle('.fis-main-nav.toggleHeader .nav-container .primary-nav', [4]);
+                injectStyle('.nav-container .primary-nav', [4]);
+                injectCSS(CSS_URLS.localNav);
+
+                if (matchedSpecialPage === '/about-us/fis-events'){
+                  [CSS_URLS.localNav, CSS_URLS.support1, CSS_URLS.support2, CSS_URLS.categoryDropdown].forEach(injectCSS);
+
+                  const markup = createLocalNav({
+                          homeLink: '/about-us',
+                          tiers: [{href: '/about-us/fis-events', text: 'Events', disabled: true}],
+                          wrapperClass: 'products-overview',
+                          title: 'Events',
+                          showContactUs: true,
+                          wrapperClass: 'about-child-page',
+                          localNavClass: 'about-child-local'
+                  });
+                  injectLocalNav(markup, markup.title);
+                  waitForElement('.fis-localnav-wrapper .fis-localnav-container', (navWrapper) => {
+                          //navWrapper.insertAdjacentHTML('afterbegin', markup.match(/<div class="nav-panel">[\s\S]*?<\/div>\s*<\/div>/)[0]);
+                          navWrapper.closest('.fis-localnav-wrapper').classList.add('products-overview');
+                          navWrapper.closest('.fis-localnav-wrapper').classList.add('events-local');
+                          const mainNav = document.querySelector('.fis-main-nav');
+                          if(mainNav){
+                                  mainNav.classList.add('about-special-page');
+                          }
+                  });
+
+                  const heroBanner = document.getElementById('hero-banner');
+
+                  if (heroBanner){
+                          heroBanner.classList.add('global-sustainability-local-nav-pad');
+                  }
+          }
+          
+                if (matchedSpecialPage === '/blog'){
+                        const markup = createLocalNav({
+                                homeLink: '/about-us',
+                                tiers: [{href: '/blog', text: 'Overview', disabled: true}],
+                                wrapperClass: 'blog-overview'
+                        });
+                        const productMarkup = createNavPanel() + createBreadcrumbs([
+                          {href: '/products', text: 'Overview'},
+                          {href: '/products/product-catalog', text: 'All products'}
+                        ]);
+                        waitForElement('.fis-localnav-wrapper .fis-localnav-container', (navWrapper) => {
+                                navWrapper.insertAdjacentHTML('afterbegin', productMarkup);
+                                //navWrapper.insertAdjacentHTML('afterbegin', markup.match(/<div class="nav-panel">[\s\S]*?<\/div>\s*<\/div>/)[0]);
+                                navWrapper.closest('.fis-localnav-wrapper').classList.add('blog-overview');
+                                document.querySelector('.component.local-nav').classList.add('blog-localnav');
+                        });
+                }
+
+                /*  if (matchedSpecialPage === '/global-sustainability'){
+                        [CSS_URLS.localNav, CSS_URLS.support1, CSS_URLS.support2, CSS_URLS.categoryDropdown].forEach(injectCSS);
+
+                        const markup = createLocalNav({
+                                homeLink: '/about-us',
+                                tiers: [{href: '/global-sustainability', text: 'Global sustainability', disabled: true}],
+                                wrapperClass: 'products-overview events-overview',
+                                title: 'Global sustainability',
+                                showContactUs: true,
+                                wrapperClass: 'about-child-page',
+                                localNavClass: 'about-child-local'
+                        });
+                        injectLocalNav(markup, markup.title);
+                        waitForElement('.fis-localnav-wrapper .fis-localnav-container', (navWrapper) => {
+                                //navWrapper.insertAdjacentHTML('afterbegin', markup.match(/<div class="nav-panel">[\s\S]*?<\/div>\s*<\/div>/)[0]);
+                                navWrapper.closest('.fis-localnav-wrapper').classList.add('products-overview');
+                                navWrapper.closest('.fis-localnav-wrapper').classList.add('global-sustainability-local');
+                                const mainNav = document.querySelector('.fis-main-nav');
+                                if(mainNav){
+                                        mainNav.classList.add('about-special-page');
+                                }
+                        });
+
+                        const heroBanner = document.getElementById('hero-banner');
+
+                        if (heroBanner){
+                                heroBanner.classList.add('global-sustainability-local-nav-pad');
+                        }
+                } */
+
+                if (matchedSpecialPage === '/wealth-partners'){
+                        const markup = createLocalNav({
+                                homeLink: '/about-us',
+                                tiers: [{href: '/wealth-partners', text: 'Wealth partners', disabled: true}],
+                                wrapperClass: 'wealth-partners-overview'
+                        });
+                        waitForElement('.fis-localnav-wrapper .fis-localnav-container', (navWrapper) => {
+                                navWrapper.insertAdjacentHTML('afterbegin', markup.match(/<div class="nav-panel">[\s\S]*?<\/div>\s*<\/div>/)[0]);
+                                navWrapper.closest('.fis-localnav-wrapper').classList.add('products-overview');
+                                navWrapper.closest('.fis-localnav-wrapper').classList.add('wealth-partners-overview');
+                        });
+                }
+
+                if (matchedSpecialPage === '/fisinnovatein48-partner-edition'){
+                        const markup = createLocalNav({
+                                homeLink: '/about-us',
+                                tiers: [{href: '/fisinnovatein48-partner-edition', text: 'InnovateIN48 Partner Edition', disabled: true}],
+                                wrapperClass: 'innovate-partners-overview'
+                        });
+                        waitForElement('.fis-localnav-wrapper .fis-localnav-container', (navWrapper) => {
+                                navWrapper.insertAdjacentHTML('afterbegin', markup.match(/<div class="nav-panel">[\s\S]*?<\/div>\s*<\/div>/)[0]);
+                                navWrapper.closest('.fis-localnav-wrapper').classList.add('products-overview');
+                                navWrapper.closest('.fis-localnav-wrapper').classList.add('innovate-partners-overview');
+                                document.querySelector('.component.local-nav').classList.add('innovate-partners-localnav');
+                        });
+                }
+
+                if (matchedSpecialPage === '/fisinnovatein48'){
+                        [CSS_URLS.localNav, CSS_URLS.support1, CSS_URLS.support2, CSS_URLS.categoryDropdown].forEach(injectCSS);
+
+                        const markup = createLocalNav({
+                                homeLink: '/about-us',
+                                tiers: [{href: '/fisinnovatein48', text: 'InnovateIN48', disabled: true}],
+                                wrapperClass: 'products-overview',
+                                title: 'InnovateIN48',
+                                showContactUs: true,
+                                wrapperClass: 'about-child-page',
+                                localNavClass: 'about-child-local'
+                        });
+                        injectLocalNav(markup, markup.title);
+                        waitForElement('.fis-localnav-wrapper .fis-localnav-container', (navWrapper) => {
+                                //navWrapper.insertAdjacentHTML('afterbegin', markup.match(/<div class="nav-panel">[\s\S]*?<\/div>\s*<\/div>/)[0]);
+                                navWrapper.closest('.fis-localnav-wrapper').classList.add('products-overview');
+                                navWrapper.closest('.fis-localnav-wrapper').classList.add('innovate-in-48-local');
+                                const mainNav = document.querySelector('.fis-main-nav');
+                                if(mainNav){
+                                        mainNav.classList.add('about-special-page');
+                                }
+                        });
+                }
+
+                if (matchedSpecialPage === '/fis-fintech-accelerator'){
+                        const markup = createLocalNav({
+                                homeLink: '/about-us',
+                                tiers: [{href: '/fis-fintech-accelerator', text: 'Fintech Accelerator', disabled: true}],
+                                wrapperClass: 'fintech-accelerator-overview'
+                        });
+                        waitForElement('.fis-localnav-wrapper .fis-localnav-container', (navWrapper) => {
+                                navWrapper.insertAdjacentHTML('afterbegin', markup.match(/<div class="nav-panel">[\s\S]*?<\/div>\s*<\/div>/)[0]);
+                                navWrapper.closest('.fis-localnav-wrapper').classList.add('products-overview');
+                                navWrapper.closest('.fis-localnav-wrapper').classList.add('fintech-accelerator-overview');
+                                document.querySelector('.component.local-nav').classList.add('fintech-accelerator-localnav');
+                        });
+
+                }
+
+                if (matchedSpecialPage === '/minority-banking-mdi-cdfi'){
+                        const markup = createLocalNav({
+                                homeLink: '/about-us',
+                                tiers: [{href: '/minority-banking-mdi-cdfi', text: 'MDIs and CDFIs', disabled: true}],
+                                wrapperClass: 'mdi-cdfi-overview'
+                        });
+                        waitForElement('.fis-localnav-wrapper .fis-localnav-container', (navWrapper) => {
+                                navWrapper.insertAdjacentHTML('afterbegin', markup.match(/<div class="nav-panel">[\s\S]*?<\/div>\s*<\/div>/)[0]);
+                                navWrapper.closest('.fis-localnav-wrapper').classList.add('products-overview');
+                                navWrapper.closest('.fis-localnav-wrapper').classList.add('mdi-cdfi-overview');
+                        });
+                }
+
+}
+
+
+
+
+    return;
+  }
+
+  // Route to appropriate handler
+  if (path.startsWith('/products')) {
+    handleProductsSection();
+  } else if (path.startsWith('/insights')) {
+    handleInsightsSection();
+  } else if (path.startsWith('/about-us')) {
+    handleAboutSection();
+  } else if (path.startsWith('/developer')){
+    handleDeveloper();
+  }
+
+ 
+  const dropdownTrigger = document.querySelector('ul.fis-localnav-right.insights-dropdown > li > a');
+  const dropdownLi = dropdownTrigger;
+  const componentLocalNav = document.querySelector('.component.local-nav');
+  componentLocalNav.classList.add('category-dropdown');
+
+  if (!dropdownTrigger || !dropdownLi) return;
+
+  // Toggle class on click
+  dropdownTrigger.addEventListener('click', (e) => {
+    e.preventDefault(); // Prevent default link behavior if needed
+    dropdownLi.classList.toggle('insights-dropdown-active');
+    componentLocalNav.classList.toggle('active');
+  });
+
+  // Remove class when clicking outside
+  document.addEventListener('click', (e) => {
+    if (!dropdownLi.contains(e.target)) {
+      dropdownLi.classList.remove('insights-dropdown-active');
+      componentLocalNav.classList.remove('active');
+    }
+  });
+
+
+
+});

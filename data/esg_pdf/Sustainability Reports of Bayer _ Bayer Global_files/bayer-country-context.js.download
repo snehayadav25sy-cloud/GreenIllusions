@@ -1,0 +1,29 @@
+(function ($, Drupal) {
+  'use strict';
+  $('document').ready(function () {
+    // Setting label for the context field.
+    if ($('.toolbar-tab').find('.country_context')) {
+      $('.country_context').before('<label class="country-context-label">' + Drupal.t('Country/Sub Hub:') + '</label>');
+      $('.country_context').parent('.form-type-select').addClass('field-country-context');
+      $('.country_context').closest('.toolbar-tab').addClass('tab-country-context');
+    }
+    $('.country_context').on("change", function (e) {
+      var context_value = $('.country_context').val();
+
+      // Ajax call to pass the updated context.
+      $.ajax({
+        type: "GET",
+        url: "/ajax/bayer-permissions/country-context",
+        data: {
+          context_value: context_value,
+        },
+        success: function () {
+          location.reload();
+        },
+        error: function () {
+          alert(Drupal.t('Unable to switch to the country context.'));
+        }
+      })
+    });
+  });
+})(jQuery, Drupal);

@@ -1,0 +1,233 @@
+
+/*Navigation adjustments PRODUCTION*/
+var cmSessionVal;
+
+function createStagePolicySessionItem(){
+	sessionStorage.setItem('stage-dismissed-onetrust', 'yes');
+}
+
+function getStagePolicySessionItem() {
+	cmSessionVal = sessionStorage.getItem('stage-dismissed-onetrust');
+}
+
+function hidePolicy(){
+    var appendStyle = '<style>#onetrust-banner-sdk, .onetrust-pc-dark-filter.ot-hide.ot-fade-in{display:none!important}#ot-sdk-btn-floating.ot-floating-button.ot-hide{display:block !important;}.onetrust-pc-dark-filter.ot-fade-in {display:none!important;}</style>';
+    $(appendStyle).appendTo('head');
+}
+
+// Function to check for URL parameter
+function getUrlParameter(name) {
+    name = name.replace(/[\[]/, '\\[').replace(/[\]]/, '\\]');
+    var regex = new RegExp('[\\?&]' + name + '=([^&#]*)');
+    var results = regex.exec(location.search);
+    return results === null ? '' : decodeURIComponent(results[1].replace(/\+/g, ' '));
+}
+
+function ifLocalSticky() {
+    if (document.querySelector(".component.local-nav").classList.contains("sticky")) {
+        document.getElementById("wrapper").classList.add("local-sticky-active");
+    } else {
+        document.getElementById("wrapper").classList.remove("local-sticky-active");
+    }
+}
+
+function keepNoMenuNoScroll() {
+    document.documentElement.classList.add("no-scroll");
+}
+
+
+document.addEventListener("DOMContentLoaded", () => {
+
+    /*Set staging environment session variable to keep cookie banner hidden*/
+    if (window.location.hostname.indexOf('cmwwwnew') !== -1){
+        getStagePolicySessionItem();
+        if (cmSessionVal !== 'yes'){
+            createStagePolicySessionItem();
+        } else {
+            // Check if onetrust=debug parameter exists
+            var oneTrustDebug = getUrlParameter('onetrust');
+            if (oneTrustDebug !== 'debug') {
+                hidePolicy();
+            }
+        }
+    }
+/*END Set staging environment session variable to keep cookie banner hidden*/
+
+
+var navWindow = $(window).width();
+    if (navWindow <= 991) {
+
+        var parentDropdown;
+        /*General Behavior for Nested Navigation Items*/
+        $(document).on('click', 'li a.l1-link.fis-anchor-disable', function(){
+            
+            parentDropdown = $(this).closest('.navigation-dropdown');
+            parentDropdown.addClass('maintain-dd');
+            //console.log(parentDropdown.html());
+        });
+
+        $(document).on('click', 'ul.nav-L2-items li.nav-L1-header', function(){
+            //console.log("target hit");
+            $(this).closest('ul.nav-L2-items').removeClass('active list-active');
+            $(this).closest('ul.nav-L2-items').prev('.parent-list-active').removeClass('parent-list-active');
+            $(this).closest('ul.nav-L1-items.column2').addClass('wait');
+                
+                setTimeout(function(){
+                    parentDropdown.addClass('show-dd');
+                },100);
+
+                setTimeout(function(){
+                    $('.wait').removeClass('wait');
+                },300);
+            
+        });
+
+        $(document).on('click','#mobi-nav', function(){
+            //console.log("remove maintain-dd");
+            $('.maintain-dd').removeClass('maintain-dd');
+        
+        });
+
+        $(document).on('click','.merchant-dropdown.navigation-dropdown.maintain-dd .nav-L1-items > .nav-L1-header', function(){
+                $(this).closest('.navigation-dropdown').removeClass('maintain-dd');
+                //console.log('TEST');
+        });
+
+
+    }
+
+
+    window.addEventListener('resize', function () {
+        $('.merchant-dropdown.navigation-dropdown.show-dd').removeClass('overlay-active');	
+        navWindow = $(window).width();
+        if (navWindow <= 991) {
+        $('.active-middle-image').removeClass('.active-middle-image');	
+
+    }
+    });
+
+
+    
+    
+
+        // Check if local-nav exists and run ifLocalSticky if it does
+        if (document.querySelector(".component.local-nav")) {
+            ifLocalSticky();
+        }
+    
+        // Add scroll event listener
+        window.addEventListener("scroll", function() {
+            if (document.querySelector(".component.local-nav")) {
+                ifLocalSticky();
+            }
+        });
+    
+        // Add click event for menu items that are not active
+        document.addEventListener("click", function(event) {
+      
+            if (event.target.closest(".menu-item:not(.active-navigation)")) {
+                keepNoMenuNoScroll();
+                //console.log('KeepNoMenuNoScroll fired');
+            }
+            
+        });
+    
+        document.addEventListener('click', function(event) {
+        // Check if the click occurred on or within the mobile nav button
+        let mobiNavClicked = event.target.closest('.fis-main-nav #mobi-nav');
+        
+        if (mobiNavClicked) {
+            if (window.innerWidth <= 991) {
+                if (!document.querySelector('.mobile-open')) {
+                    if (!document.querySelector('.hamburger-overlay')) {
+                        // Create the overlay element
+                        let overlay = document.createElement('div');
+                        overlay.className = 'hamburger-overlay';
+                        
+                        // Insert the overlay before the mobile nav button
+                        let mobiNav = document.querySelector('.fis-main-nav #mobi-nav');
+                        mobiNav.parentNode.insertBefore(overlay, mobiNav);
+                        
+                        // Add the mobile-open class to the clicked element
+                        mobiNavClicked.classList.add('mobile-open');
+                        //console.log('Tagged hamburger icon with mobile-open class');
+                    }
+                }
+            }
+        }
+    });
+    
+    document.addEventListener('click', function(event) {
+        // Check if the click occurred on the hamburger overlay
+        if (event.target.matches('.hamburger-overlay')) {
+            if (window.innerWidth <= 991) {
+                if (document.querySelector('.mobile-open')) {
+                    if (document.querySelector('#fis-search-overlay.search-overlay-active')) {
+                        // Handle search overlay case
+                        let searchOverlay = document.querySelector('#fis-search-overlay');
+                        searchOverlay.classList.remove('search-overlay-active');
+                        
+                        // Simulate jQuery's fadeOut with a custom function or CSS transition
+                        searchOverlay.style.display = 'none';
+                        
+                        document.querySelector('.logoSearchOverlay').classList.remove('logoSearchOverlay');
+                        document.querySelector('.showing-search').classList.remove('showing-search');
+                        document.documentElement.setAttribute('style', '');
+                    } else {
+                        // Handle regular case
+                        let hamburgerOverlay = document.querySelector('.fis-main-nav .hamburger-overlay');
+                        if (hamburgerOverlay) {
+                            hamburgerOverlay.remove();
+                        }
+                        
+                        document.querySelector('.nav-container').classList.remove('show-nav');
+                        document.querySelector('.hamburger-menu').classList.remove('mobile-open');
+
+                        const stickyReducedZ = document.querySelector('.local-nav.reduce-z');
+                        const stickyReducedNavZ = document.querySelector('.local-nav.reduce-nav-z');
+
+                        if (stickyReducedZ) {
+                            stickyReducedZ.classList.remove('reduce-z');
+                        }
+
+                        if (stickyReducedNavZ) {
+                            stickyReducedNavZ.classList.remove('reduce-nav-z');
+                        }
+                        
+                        let fisMainNav = document.querySelector('.fis-main-nav');
+                        fisMainNav.classList.remove('dropdown-active', 'show-nav');
+                        
+                        document.querySelectorAll('.show-dd').forEach(function(el) {
+                            el.classList.remove('show-dd');
+                        });
+                        
+                        document.querySelectorAll('.maintain-dd').forEach(function(el) {
+                            el.classList.remove('maintain-dd');
+                        });
+                        
+                        document.documentElement.classList.remove('no-scroll');
+                        document.documentElement.classList.remove('maintain-no-scroll');
+                        document.documentElement.classList.remove('mob-overflow-hide');
+                    }
+                }
+            }
+        }
+    });
+
+
+
+var getCookie=function(name){var re,value=new RegExp(name+"=([^;]+)").exec(document.cookie);return null!=value?unescape(value[1]):null};
+var optinVals=getCookie("OptanonConsent");optinVals&&-1!==optinVals.indexOf("C0002:0")?grantVidyardConsent():revokeVidyardConsent();
+$(document).on("click","button.save-preference-btn-handler, button.accept-recommended-btn-handler, button#onetrust-accept-btn-handler",(function(){console.log("clicked selector to initiate vidyard consent check..."),optinVals&&-1!==optinVals.indexOf("C0002:0")?grantVidyardConsent():revokeVidyardConsent()}));
+}, false);
+function grantVidyardConsent(){VidyardV4.api.GDPR.consent(!0)}function revokeVidyardConsent(){VidyardV4.api.GDPR.consent(!1)}
+window['onVidyardAPI'] = function() {
+    VidyardV4.api.GDPR.hasConsentOnReady((hasConsent) => {
+      if (hasConsent) {
+          //console.log('Vidyard consent granted');
+      } else {
+          //console.log('Vidyard consent is now revoked');
+      }
+    });
+  }
+/*END Navigation adjustments*/

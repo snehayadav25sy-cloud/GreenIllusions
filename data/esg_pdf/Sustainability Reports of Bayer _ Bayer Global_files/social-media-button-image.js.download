@@ -1,0 +1,46 @@
+/**
+ * @file social-media-button-image.js
+ */
+
+(function ($, Drupal, drupalSettings) {
+  'use strict';
+
+  $(document).ready(function () {
+    var width = $(window).width(); 
+    
+    if ($('.follow-us .social-media-icons .has-image').length > 0) {
+      $('.follow-us .social-media-icons .has-image').each(function() {
+        if ($(this).parents().hasClass('paragraph--type--footer-section')) {
+          if (width > 991) {
+            // Show image on hover if social media button is in footer.
+            $(this).hover(function() {
+              $(this).siblings('.social-media-button-image').slideToggle('slow');
+            });
+          } else {
+            // Show image when user clicks on social media buttons.
+            $(this).on('click', function(e) {
+              e.preventDefault();
+              $(this).siblings('.social-media-button-image').slideToggle('slow');
+            });
+            $(this).on('focusout', function() {
+              $(this).siblings('.social-media-button-image').slideUp('slow');
+            });
+          }
+        };
+
+        // Show image on click if social media button is in sidebar.
+        if ($(this).parents().hasClass('paragraph--type--social-media-buttons')) {
+          $(this).on('click', function(e) {
+            e.preventDefault();
+            $(this).siblings('.social-media-button-image').slideToggle('slow');
+          });
+          // Hide the image when clicked outside the button.
+          $(this).on('focusout', function() {
+            $(this).siblings('.social-media-button-image').slideUp('slow');
+          });
+        };
+      });
+    }
+  });
+
+})(jQuery, Drupal, drupalSettings);

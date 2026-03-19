@@ -1,0 +1,258 @@
+
+async function getCountrySelectorData() {
+    try {
+        const sc_targetHostname = window.location.hostname;
+        const sc_virtualFolder = document.getElementById("cs-virtualFolder").value;
+        const sc_language = document.getElementById("cs-language").value;
+
+        const [response1, response2] = await Promise.all([
+            fetch(`https://${sc_targetHostname}/api/CountrySelector/GetCountrySelectorData?requestHostname=${sc_targetHostname}${sc_virtualFolder}&lang=${sc_language}`),
+            fetch(`https://${sc_targetHostname}/api/CountrySelector/GetCountrySelectorLabels?lang=${sc_language}`),
+        ], {
+            method: 'GET',
+            headers: {
+                accept: 'application/json',
+            },
+        });
+        // console.log(response1, response2);
+        if (!response1.ok) {
+            renderNoData();
+            throw new Error(`Error! status: ${!response1.status}`);
+        }
+
+        if (!response2.ok) {
+            throw new Error(`Error! status: ${!response2.status}`);
+        }
+
+        const listOfCountries = await response1.json();
+        const countrySelectorLabels = await response2.json();
+        countrySelector_Func(listOfCountries);
+        renderCountry_SelectorLabels(countrySelectorLabels);
+    } catch (err) {
+        console.log(err);
+    }
+}
+
+function renderNoData() {
+    let countrySelctorContainer = document.querySelectorAll('.new_countrySelect-container div');
+    countrySelctorContainer.forEach(function (item) { item.style.display = "none" });
+}
+
+function renderCountry_SelectorLabels(item) {
+    document.querySelector('#display_title_CountrySelector').innerHTML = item.SelectaCountry;
+    document.getElementById('inputCountry').setAttribute('placeholder', item.TypeaCountryorLanguage);
+    const getNoCountryDiv = document.getElementById('new_countrySelectnotAvailable');
+    if (getNoCountryDiv.children.length === 0) {
+        const createInnerPTag = document.createElement('p');
+        const createInnerResetBtn = document.createElement('button');
+        createInnerPTag.innerHTML = item.NoResults;
+        createInnerResetBtn.setAttribute('type', 'button');
+        createInnerResetBtn.setAttribute('onclick', "resetCountryList()");
+        createInnerResetBtn.innerHTML = '' + item.SeeAvailableCountries + '<i class="fa-solid fa-rotate-left"></i>';
+        getNoCountryDiv.appendChild(createInnerPTag);
+        getNoCountryDiv.appendChild(createInnerResetBtn);
+    }
+}
+
+function displayCurrentCountry_Func(data) {
+    let displayCurrentCountry = document.getElementById('new_countrySelect-CurrentLabel');
+    let displayFragView = document.createDocumentFragment();
+    data.forEach(function (item) {
+        var count = (item.Countries || []).filter(value => value.IsCurrent).length;
+        if (item.Countries !== null) {
+            if (item.Countries.length > 0) {
+                item.Countries.forEach(function (value, x) {
+                    if (value.IsCurrent) {
+                        let createContainerDiv = document.createElement('div');
+                        createContainerDiv.setAttribute('class', 'new_countrySelect-currentCountry-cntr');
+                        createContainerDiv.setAttribute('aria-label', 'Navigate to ' + value.CountryName + 'website');
+                        let createAnchorInContainer = document.createElement('a');
+                        createAnchorInContainer.setAttribute('class', 'active');
+                        createAnchorInContainer.setAttribute('href', value.WebsiteUrl);
+                        var html = '<img src=' + value.CountryFlag + ' alt=' + value.CountryLanguage + '>'
+                        if (count == 1) { html += '<span>' + value.CountryName + '</span>' + '<span class="country_SelectLanguage">' + value.CountryLanguage + '</span><i class="far fa-check"></i>'; }
+                        createAnchorInContainer.innerHTML = html;
+                        createContainerDiv.appendChild(createAnchorInContainer);
+                        displayFragView.appendChild(createContainerDiv);
+
+                        document.querySelectorAll('.country-selector .countryDetail').forEach(menuTrigger => {
+                            if (!value.HasPriority) { return }
+                            let flag = menuTrigger.querySelector('img');
+                            if (flag) {
+                                flag.setAttribute('src', value.CountryFlag);
+                                flag.setAttribute('alt', value.CountryLanguage);
+                            }
+                            let cname = menuTrigger.querySelector('.countryname');
+                            if (cname) { cname.innerHTML = value.CountryName; }
+                            let cname2 = menuTrigger.querySelector('.country_SelectLanguage');
+                            if (cname2) { cname2.innerHTML = value.CountryLanguage; }
+                        });
+                    }
+                });
+            }
+        }
+    });
+    // console.log(displayFragView);
+    displayCurrentCountry.appendChild(displayFragView);
+}
+
+function countrySelector_Func(data) {
+    this.displayCurrentCountry_Func(data);
+    document.getElementById("country_search_close").style.display = "none";
+    document.getElementById("new_countrySelectnotAvailable").style.display = "none";
+
+    let list = document.getElementById("new_countrySelectSuggestion");
+    let fragList = document.createDocumentFragment();
+    let countrySelector_counter = 0;
+    data.forEach(function (item) {
+
+        if (item.Countries !== null) {
+            if (item.Countries.length > 0) {
+                let titleLevelDiv = document.createElement('div');
+                titleLevelDiv.setAttribute('class', 'new_countrySelect-title');
+                titleLevelDiv.innerHTML = '<a href="#">' + item.RegionName + '</a>';
+                fragList.appendChild(titleLevelDiv);
+                item.Countries.forEach(function (value, x) {
+                    let testBool = value.IsCurrent ? "block" : "none";
+                    let innerDiv = document.createElement('div');
+                    if (countrySelector_counter === 0) {
+                        innerDiv.setAttribute('class', 'new_countrySelect-suggestArea-cntr non-search-Filter-country');
+                    } else {
+                        innerDiv.setAttribute('class', 'new_countrySelect-suggestArea-cntr search-Filter-country');
+                    }
+                    innerDiv.setAttribute('aria-label', 'Navigate to ' + value.CountryName + 'website');
+                    let innerAnchor = document.createElement('a');
+                    if (value.IsCurrent) {
+                        innerAnchor.setAttribute('class', 'active');
+                    }
+                    innerAnchor.setAttribute('href', value.WebsiteUrl);
+                    innerAnchor.setAttribute('target', value.TargetWindow);
+                    innerAnchor.innerHTML = '<img src=' + value.CountryFlag + ' alt=' + value.CountryLanguage + '>' + '<span>' + value.CountryName + '</span>' + '<span class="country_SelectLanguage">' + value.CountryLanguage + '</span><i style="display:' + testBool + '" class="far fa-check"></i>';
+                    innerDiv.appendChild(innerAnchor);
+                    fragList.appendChild(innerDiv);
+                    // console.log('%d: %s', x, value);
+                });
+            }
+        }
+
+        countrySelector_counter++;
+    });
+    list.appendChild(fragList);
+
+}
+
+function countryFilterFunc(SearchValue) {
+    this.toggleSearchIcon(SearchValue);
+    if (SearchValue.length == 0 || SearchValue.length === null) {
+        document.querySelectorAll(".new_countrySelect-title, .non-search-Filter-country").forEach(function (getTitleItem) {
+            getTitleItem.style.display = "block";
+        });
+    } else {
+        document.querySelectorAll(".new_countrySelect-title, .non-search-Filter-country").forEach(function (getTitleItem) {
+            getTitleItem.style.display = "none";
+        });
+    }
+    var countrySuggestInput, countrysuggestInput_Filter, countrySuggestionCntr, countrySuggestion_list, anchorList, i, txtValue;
+    countrySuggestInput = document.getElementById("inputCountry");
+    countrysuggestInput_Filter = countrySuggestInput.value.toUpperCase();
+    countrySuggestionCntr = document.getElementById("new_countrySelectSuggestion");
+    countrySuggestion_list = countrySuggestionCntr.querySelectorAll(".search-Filter-country");
+    var listCount = 0;
+    for (i = 0; i < countrySuggestion_list.length; i++) {
+        anchorList = countrySuggestion_list[i].getElementsByTagName("a")[0];
+        txtValue = anchorList.textContent && anchorList.innerText;
+        if (txtValue.toUpperCase().indexOf(countrysuggestInput_Filter) > -1) {
+            anchorList.querySelectorAll('span').forEach(function (item) {
+                if (item.querySelectorAll('em').length > 0) {
+                    item.querySelectorAll('em').forEach(function (getEMitem) {
+                        var nodelist = item.querySelectorAll('em');
+                        Array.prototype.forEach.call(nodelist, function (fitem, i) {
+                            fitem.outerHTML = fitem.innerHTML; // or item.innerText if you want to remove all inner html tags 
+                        });
+                    });
+                }
+
+                if (item.innerText.toLowerCase().indexOf(countrysuggestInput_Filter.toLowerCase()) > -1) {
+                    let matchStart = item.innerText.toLowerCase().indexOf("" + countrysuggestInput_Filter.toLowerCase() + "");
+                    let matchEnd = matchStart + countrysuggestInput_Filter.length - 1;
+                    let beforeMatch = item.innerText.slice(0, matchStart);
+                    let matchText = item.innerText.slice(matchStart, matchEnd + 1);
+                    let afterMatch = item.innerText.slice(matchEnd + 1);
+                    item.innerHTML = beforeMatch + "<em>" + matchText + "</em>" + afterMatch;
+                }
+
+            });
+            countrySuggestion_list[i].style.display = "";
+            listCount++;
+        } else {
+            countrySuggestion_list[i].style.display = "none";
+        }
+    }
+
+    // console.log(listCount + " Results");
+    if (listCount == 0) {
+        document.getElementById("new_countrySelectnotAvailable").style.display = "block";
+        document.getElementById("new_countrySelectSuggestion").style.display = 'none';
+        clearSearchedElements();
+    } else {
+        document.getElementById("new_countrySelectnotAvailable").style.display = "none";
+        document.getElementById("new_countrySelectSuggestion").style.display = 'block';
+    }
+}
+
+function toggleSearchIcon(passed_SearchValue) {
+    if (passed_SearchValue == '' || passed_SearchValue == null || passed_SearchValue.length == '0') {
+        document.getElementById("country_search_close").style.display = "none";
+        document.getElementById("country_search").style.display = "flex";
+    } else {
+        document.getElementById("country_search_close").style.display = "flex";
+        document.getElementById("country_search").style.display = "none";
+    }
+}
+
+function resetCountryList() {
+    document.getElementById("new_countrySelectnotAvailable").style.display = "none";
+    this.toggleSearchIcon(null);
+    document.querySelectorAll('.new_countrySelect-title, .new_countrySelect-suggestArea-cntr').forEach(function (title) {
+        title.style.display = "block";
+    });
+    document.getElementById('inputCountry').value = "";
+    document.getElementById("new_countrySelectSuggestion").style.display = 'block';
+    clearSearchedElements();
+}
+
+function clearSearchedElements() {
+    document.querySelectorAll("#new_countrySelectSuggestion .countryDetail").forEach(function (getEMitem) {
+        let nodelist = getEMitem.querySelectorAll('em');
+        Array.prototype.forEach.call(nodelist, function (fitem, i) {
+            fitem.outerHTML = fitem.innerHTML; // or item.innerText if you want to remove all inner html tags 
+        });
+
+    });
+}
+
+document.addEventListener("DOMContentLoaded", function () {
+    let menuTrigger = document.querySelectorAll('.country-selector .countryDetail');
+    if (!menuTrigger.length) { return; }
+    getCountrySelectorData();
+
+    document.getElementById('closeHeader_CountrySelector').addEventListener("click", function () {
+        document.getElementById('inputCountry').value = '';
+        document.getElementById('new_countrySelect-CurrentLabel').innerHTML = '';
+        document.getElementById('new_countrySelectSuggestion').innerHTML = '';
+        getCountrySelectorData();
+    });
+
+    // Modal Shown event fired
+    document.getElementById('countrySelectorModal').addEventListener('shown.bs.modal', function () {
+        $('body').css('overflow-y', 'hidden'); // hide scrolling
+        $('#button-scroll-top').css('display', 'none');
+    })
+    // Modal hidden event fired
+    document.getElementById('countrySelectorModal').addEventListener('hidden.bs.modal', function () {
+        // console.log("Modal closed");
+        resetCountryList();
+        $('body').css('overflow-y', 'auto'); // enables scrolling
+        $('#button-scroll-top').css('display', '');
+    });
+});

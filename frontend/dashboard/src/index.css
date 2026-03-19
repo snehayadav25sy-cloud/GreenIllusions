@@ -1,0 +1,83 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer utilities {
+    @keyframes border-scan {
+        0% {
+            background-position: 0% 50%;
+        }
+
+        50% {
+            background-position: 100% 50%;
+        }
+
+        100% {
+            background-position: 0% 50%;
+        }
+    }
+
+    .animate-border-scan {
+        background-size: 200% 200%;
+        animation: border-scan 4s ease infinite;
+    }
+
+    @keyframes pulse-glow {
+
+        0%,
+        100% {
+            box-shadow: 0 0 15px rgba(34, 197, 94, 0.1);
+        }
+
+        50% {
+            box-shadow: 0 0 30px rgba(34, 197, 94, 0.4);
+        }
+    }
+
+    .animate-pulse-glow {
+        animation: pulse-glow 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    }
+
+    @keyframes scan-beam {
+        0% {
+            transform: translateY(-100%);
+        }
+
+        100% {
+            transform: translateY(500%);
+        }
+    }
+
+    .animate-scan-beam {
+        animation: scan-beam 3s linear infinite;
+    }
+
+    @keyframes background-pan {
+        0% {
+            background-position: 0% 0%;
+        }
+
+        100% {
+            background-position: 100% 100%;
+        }
+    }
+
+    .animate-sidebar-bg {
+        background-size: 400% 400%;
+        animation: background-pan 30s ease infinite;
+    }
+
+    @keyframes float-up {
+        0% {
+            transform: translateY(110vh) scale(0.5);
+        }
+
+        100% {
+            transform: translateY(-10vh) scale(1.2);
+        }
+    }
+
+    .animate-float {
+        animation: float-up 10s linear infinite;
+    }
+}
