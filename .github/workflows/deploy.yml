@@ -28,3 +28,5 @@ jobs:
         with:
           folder: frontend/dashboard/build
           branch: gh-pages
+          clean: true
+          silent: true
